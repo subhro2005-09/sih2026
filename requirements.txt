@@ -3,7 +3,8 @@ uvicorn
 python-multipart
 pydantic[email]
 sqlalchemy
-psycopg[binary]
+psycopg
+psycopg-binary
 passlib[bcrypt]
 pyjwt
 qdrant-client
