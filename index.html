@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Karmayogi Bharat | AI-Enabled Skill Intelligence & Capacity Building Platform</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- FontAwesome Icons & Chart.js CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+  <!-- 1. TOP LIVE TICKER BAR (Matching iGOT Portal Header Metrics) -->
+  <div class="top-ticker-bar">
+    <div class="ticker-metrics">
+      <div class="ticker-item"><i class="fas fa-users"></i> Active Learners: <span class="num"
+          id="t-learners">1,72,32,208</span></div>
+      <div class="ticker-item"><i class="fas fa-book-open"></i> Courses Offered: <span class="num"
+          id="t-courses">6,738</span></div>
+      <div class="ticker-item"><i class="fas fa-bullseye"></i> Skill Gaps Closed: <span class="num"
+          id="t-gaps">15,27,42,116</span></div>
+      <div class="ticker-item"><i class="fas fa-award"></i> Certifications: <span class="num"
+          id="t-certs">16,37,126</span></div>
+      <div class="ticker-item"><i class="fas fa-user-check"></i> MoSPI Officials: <span class="num"
+          id="t-officials">2,49,682</span></div>
+    </div>
+    <div class="ticker-right">
+      <button class="a11y-btn" id="toggleContrast" title="Toggle High Contrast"><i class="fas fa-adjust"></i>
+        Contrast</button>
+      <button class="lang-btn" id="toggleLang">English / हिंदी</button>
+    </div>
+  </div>
+
+  <!-- 2. FLOATING PILL NAVBAR -->
+  <div class="pill-header-container">
+    <header class="pill-nav">
+      <a href="#" class="brand-logo">
+        <img src="https://igotkarmayogi.gov.in/assets/img/karmayogi_logo.png" alt="Karmayogi Logo"
+          onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png';">
+        <div class="brand-text">
+          <span class="brand-title">कर्मयोगी भारत</span>
+          <span class="brand-tagline">Skill Intelligence Platform</span>
+        </div>
+      </a>
+
+      <nav>
+        <ul class="nav-menu">
+          <li><a class="nav-link active" href="#overview">About Us</a></li>
+          <li><a class="nav-link" href="#newsroom">Newsroom</a></li>
+          <li><a class="nav-link" href="#career">Career</a></li>
+          <li><a class="nav-link" href="#tenders">Tenders</a></li>
+          <li><a class="nav-link" href="#notifications">Notifications</a></li>
+          <li><a class="nav-link" href="#help">Help Centre</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-auth-buttons">
+        <button class="btn-login" onclick="openLoginModal()">Log in</button>
+        <button class="btn-register" onclick="openLoginModal()">Register</button>
+      </div>
+    </header>
+  </div>
+
+  <!-- 3. MAIN WRAPPER -->
+  <main class="main-wrapper">
+
+    <!-- PRE-LOGIN LANDING SECTION (Visible when logged out) -->
+    <div id="pre-login-section" class="pre-login-hero">
+      <div class="hero-content">
+        <div class="hero-badge"><i class="fas fa-shield-alt"></i> Government of India Skill Intelligence Portal</div>
+        <h1>Capacity Building & Competency Analytics Platform</h1>
+        <p class="hero-desc">
+          Empowering MoSPI officials & Indian Statistical Service (ISS) cadres with AI-driven skill gap discovery,
+          continuous iGOT Karmayogi learning pathways, and automated assessment generation.
+        </p>
+
+        <div class="hero-cta-group">
+          <button class="btn-register hero-btn" onclick="openLoginModal()">
+            <i class="fas fa-sign-in-alt"></i> Log In / Register to Access Dashboard
+          </button>
+          <button class="btn-login hero-btn-sec" id="btnQuickDemoLogin">
+            <i class="fas fa-bolt"></i> Quick Demo Login (Subhrajit Roy, ISS)
+          </button>
+        </div>
+
+        <div class="hero-feature-cards">
+          <div class="h-card">
+            <i class="fas fa-columns"></i>
+            <h4>iGOT Portal Overview</h4>
+            <p>Rule-to-Role learning, CBPs, & state/department ranking podiums.</p>
+          </div>
+          <div class="h-card">
+            <i class="fas fa-brain"></i>
+            <h4>AI Assessment Engine</h4>
+            <p>Generate Bloom's Taxonomy MCQs instantly from uploaded documents.</p>
+          </div>
+          <div class="h-card">
+            <i class="fas fa-user-graduate"></i>
+            <h4>Learner Dashboard</h4>
+            <p>Competency radar charts, NSSTA badges, & personalized skill gap paths.</p>
+          </div>
+          <div class="h-card">
+            <i class="fas fa-chart-line"></i>
+            <h4>Admin Analytics</h4>
+            <p>Workforce cadre compliance & 2026-2030 predictive skill gap forecasting.</p>
+          </div>
+        </div>
+
+        <!-- RULE TO ROLE & DEMOCRATISED LEARNING SECTION -->
+        <div class="dashboard-grid" style="margin-top: 32px; text-align: left;">
+          <!-- CARD 1: Rule to Role Based Learning -->
+          <div class="dash-card col-8" style="background:#ffffff; color:var(--text-dark);">
+            <div class="card-banner-header">Rule to Role Based Learning</div>
+            <div class="card-body">
+              <div class="rule-role-grid">
+                <div>
+                  <div class="sub-section-title">Coverage of Role-Relevant Capacity Building Plans (CBPs)</div>
+                  <div class="stats-badge-grid">
+                    <div class="stat-box">
+                      <div class="stat-icon-wrapper"><i class="fas fa-users-viewfinder"></i></div>
+                      <div class="stat-info">
+                        <div class="lbl">Union CBPs</div>
+                        <div class="val">1,434</div>
+                      </div>
+                    </div>
+                    <div class="stat-box">
+                      <div class="stat-icon-wrapper"><i class="fas fa-user-group"></i></div>
+                      <div class="stat-info">
+                        <div class="lbl">Employees with CBPs</div>
+                        <div class="val">43,45,664</div>
+                      </div>
+                    </div>
+                    <div class="stat-box">
+                      <div class="stat-icon-wrapper"><i class="fas fa-landmark"></i></div>
+                      <div class="stat-info">
+                        <div class="lbl">State CBPs</div>
+                        <div class="val">2,609</div>
+                      </div>
+                    </div>
+                    <div class="stat-box">
+                      <div class="stat-icon-wrapper"><i class="fas fa-circle-check"></i></div>
+                      <div class="stat-info">
+                        <div class="lbl">Role Relevant Comple...</div>
+                        <div class="val">12,374,227</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="sub-section-title">Courses by Competency</div>
+                  <div class="chart-container-donut">
+                    <canvas id="chartCompetencyDonut"></canvas>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="sub-section-title">Courses by Level</div>
+                  <div class="level-list">
+                    <div class="level-row"><span class="level-name">Basic</span><span class="level-count">3,757</span>
+                    </div>
+                    <div class="level-row"><span class="level-name">Intermediate</span><span
+                        class="level-count">1,034</span></div>
+                    <div class="level-row"><span class="level-name">Advanced</span><span class="level-count">42</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 2: Democratised Learning -->
+          <div class="dash-card col-4" style="background:#ffffff; color:var(--text-dark);">
+            <div class="card-banner-header">Democratised Learning</div>
+            <div class="card-body">
+              <div class="sub-section-title">Onboarding and Learning Participation by Group</div>
+              <div class="chart-container-bar">
+                <canvas id="chartDemocratisedBar"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LANDING PAGE MAP & MINISTRIES RANKING SECTION -->
+        <div class="landing-map-card" style="margin-top: 32px; text-align: left;">
+          <div class="dash-card" style="background: #ffffff; color: var(--text-dark); border-radius: 16px;">
+            <div class="card-banner-header" style="border-radius: 16px 16px 0 0;">
+              iGOT Learning Progress Ranking & National Map
+              <span class="info-icon" title="Updated real-time from state and departmental iGOT APIs">i</span>
+            </div>
+            <div class="card-body">
+              <div class="ranking-tabs">
+                <button class="rank-tab-btn active" data-type="ministries">Union Ministries and Departments</button>
+                <button class="rank-tab-btn" data-type="states">States and Union Territories</button>
+              </div>
+              <div class="map-podium-wrapper">
+                <div class="india-svg-container"></div>
+                <div class="podium-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- LOGGED-IN DASHBOARD VIEW (Visible only after User Logs In) -->
+    <div id="logged-in-dashboard" style="display: none;">
+
+      <!-- USER WELCOME & TIMEFRAME STATS BANNER -->
+      <div class="user-dashboard-banner">
+        <div class="u-banner-profile">
+          <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="User Avatar" class="u-avatar">
+          <div>
+            <div class="u-welcome-badge"><i class="fas fa-circle-check"></i> Authenticated ISS Official Session</div>
+            <h2 class="u-name" id="dash-user-name">Subhrajit Roy, ISS</h2>
+            <div class="u-title" id="dash-user-title">Senior Statistical Officer (Group A) • NSSO Field Operations,
+              MoSPI</div>
+          </div>
+        </div>
+
+        <div class="u-banner-metrics">
+          <!-- Last Login Widget -->
+          <div class="u-stat-card">
+            <div class="u-stat-icon" style="background:#E0F2FE; color:#0284C7;"><i class="fas fa-clock-rotate-left"></i>
+            </div>
+            <div class="u-stat-info">
+              <div class="u-stat-lbl">Time Frame of Last Log In</div>
+              <div class="u-stat-val" id="dash-last-login">Today, 14:15 IST</div>
+              <div class="u-stat-sub" id="dash-login-timeframe">Session active (2 hrs ago)</div>
+            </div>
+          </div>
+
+          <!-- Courses Completed & Timeframe Selector -->
+          <div class="u-stat-card">
+            <div class="u-stat-icon" style="background:#FEF3C7; color:#D97706;"><i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="u-stat-info">
+              <div class="u-stat-header-row">
+                <div class="u-stat-lbl">Courses Completed</div>
+                <select id="timeframeSelect" class="timeframe-dropdown" onchange="updateTimeframeStats()">
+                  <option value="30days">Last 30 Days</option>
+                  <option value="90days">Last 90 Days</option>
+                  <option value="year">This Year (2026)</option>
+                  <option value="all" selected>All Time</option>
+                </select>
+              </div>
+              <div class="u-stat-val" id="dash-courses-count">14 Courses</div>
+              <div class="u-stat-sub" id="dash-courses-timeframe">48.5 hrs logged • 12 Certificates</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW SWITCHER TABS -->
+      <div class="view-mode-tabs">
+        <button class="v-tab active" data-target="sec-portal">
+          <i class="fas fa-columns"></i> iGOT Portal Overview
+        </button>
+        <button class="v-tab" data-target="sec-ai-quiz">
+          <i class="fas fa-brain"></i> AI Assessment Engine (MCQ Generator)
+        </button>
+        <button class="v-tab" data-target="sec-learner">
+          <i class="fas fa-user-graduate"></i> Learner Competency Dashboard
+        </button>
+        <button class="v-tab" data-target="sec-admin">
+          <i class="fas fa-chart-line"></i> Admin Analytics & Predictive Needs
+        </button>
+      </div>
+
+      <!-- SECTION 1: iGOT PORTAL OVERVIEW -->
+      <div id="sec-portal" class="view-section" style="display: block;">
+        <div class="dashboard-grid">
+
+          <!-- CARD: Shared National Aspirations -->
+          <div class="dash-card col-12">
+            <div class="card-banner-header">Shared National Aspirations</div>
+            <div class="card-body">
+              <div class="sub-section-title">Course Completion for National Priorities</div>
+              <div class="aspirations-list">
+                <div class="asp-item">
+                  <div class="asp-header"><span class="asp-title">AI & Emerging Tech</span><span
+                      class="asp-count">3,38,80,712</span></div>
+                  <div class="progress-track">
+                    <div class="progress-fill" style="width: 88%;"></div>
+                  </div>
+                </div>
+                <div class="asp-item">
+                  <div class="asp-header"><span class="asp-title">Citizen Centricity & Jan Bhagidari</span><span
+                      class="asp-count">1,50,86,052</span></div>
+                  <div class="progress-track">
+                    <div class="progress-fill" style="width: 65%;"></div>
+                  </div>
+                </div>
+                <div class="asp-item">
+                  <div class="asp-header"><span class="asp-title">Viksit Bharat 2047 Data Analytics</span><span
+                      class="asp-count">1,10,49,297</span></div>
+                  <div class="progress-track">
+                    <div class="progress-fill" style="width: 52%;"></div>
+                  </div>
+                </div>
+                <div class="asp-item">
+                  <div class="asp-header"><span class="asp-title">Official Statistical Systems Modernization</span><span
+                      class="asp-count">89,45,210</span></div>
+                  <div class="progress-track">
+                    <div class="progress-fill" style="width: 44%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 5: Right Person for the Right Job (eHRMS) -->
+          <div class="dash-card col-12">
+            <div class="card-banner-header">Right Person for the Right Job (eHRMS)</div>
+            <div class="card-body">
+              <div class="ehrms-grid">
+                <div class="ehrms-card">
+                  <i class="fas fa-id-card-clip fa-2x" style="color:#1A73E8; margin-bottom:8px;"></i>
+                  <div>Employees with eHRMS Access</div>
+                </div>
+                <div class="ehrms-card">
+                  <div class="stat-icon-wrapper" style="margin: 0 auto 8px auto;"><i
+                      class="fas fa-hand-holding-hand"></i>
+                  </div>
+                  <div>Employees Services Available</div>
+                </div>
+                <div class="ehrms-card">
+                  <i class="fas fa-arrows-split-up-and-left fa-2x" style="color:#FF9933; margin-bottom:8px;"></i>
+                  <div>Transfer and Deputation Postings</div>
+                </div>
+                <div class="ehrms-card">
+                  <i class="fas fa-file-signature fa-2x" style="color:#059669; margin-bottom:8px;"></i>
+                  <div>Pension Claims Processed</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SECTION 2: AI ASSESSMENT ENGINE (MCQ Generator) -->
+      <div id="sec-ai-quiz" class="view-section" style="display: none;">
+        <div class="quiz-engine-card">
+          <h2><i class="fas fa-microchip" style="color:#1A73E8;"></i> AI-Powered Intelligent Assessment Engine</h2>
+          <p style="color:var(--text-muted); margin-bottom:20px; font-size:0.92rem;">
+            Upload learning material (PDF documents, survey manuals, lecture notes, presentation slides) to
+            automatically
+            synthesize Bloom's Taxonomy MCQs, instant evaluation keys, and explanations powered by LLM & NLP logic.
+          </p>
+
+          <div class="uploader-box" id="uploadDropzone">
+            <div class="uploader-icon"><i class="fas fa-cloud-arrow-up"></i></div>
+            <h3 id="uploadFileName">Drag & Drop Learning Document / Presentation Here</h3>
+            <p style="color:var(--text-muted); font-size:0.85rem; margin-top:4px;">Supports .pdf documents</p>
+            <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;" />
+            <button class="btn-generate-ai" id="btnGenerateQuiz">
+              <i class="fas fa-brain"></i> Generate AI Assessment (MCQs)
+            </button>
+          </div>
+
+          <div class="quiz-output-area" id="quizOutputArea">
+            <h3 style="margin-bottom:16px; color:var(--card-dark-blue);"><i class="fas fa-clipboard-check"></i>
+              Generated
+              Bloom's Taxonomy Assessment</h3>
+            <div id="questionsContainer"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Assessment & Quiz History Card -->
+      <div class="card"
+        style="background:#fff; border-radius:12px; padding:20px; margin-top:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+          <h4 style="margin:0; color:#003366; font-size:1.05rem;">
+            <i class="fas fa-history" style="color:#1A73E8; margin-right:8px;"></i> AI Assessment & Quiz History
+          </h4>
+          <button class="btn-login" onclick="loadQuizHistory()" style="font-size:0.75rem; padding:4px 10px;">
+            <i class="fas fa-sync-alt"></i> Refresh
+          </button>
+        </div>
+
+        <div id="quizHistoryList" style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">
+            <thead>
+              <tr style="border-bottom:2px solid #EDF2F7; color:#64748B;">
+                <th style="padding:8px;">Assessment / Topic</th>
+                <th style="padding:8px;">Score</th>
+                <th style="padding:8px;">Percentage</th>
+                <th style="padding:8px;">Completion Date</th>
+                <th style="padding:8px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="quizHistoryTableBody">
+              <tr>
+                <td colspan="5" style="text-align:center; padding:15px; color:#94A3B8;">No completed assessments yet.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECTION 3: LEARNER COMPETENCY DASHBOARD -->
+      <div id="sec-learner" class="view-section" style="display: none;">
+        <div class="dashboard-grid">
+          <div class="dash-card col-6">
+            <div class="card-banner-header">Official Learner Competency Profile</div>
+            <div class="card-body">
+              <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" style="width:54px; height:54px;">
+                <div>
+                  <h3 style="font-size:1.1rem; color:var(--text-dark);" id="l-name">Subhrajit Roy, ISS</h3>
+                  <div style="font-size:0.82rem; color:var(--text-muted);" id="l-desig">Senior Statistical Officer
+                    (Group
+                    A)</div>
+                  <div style="font-size:0.8rem; font-weight:700; color:var(--card-dark-blue);" id="l-dept">NSSO Field
+                    Operations, MoSPI</div>
+                </div>
+              </div>
+              <div class="radar-chart-container">
+                <canvas id="chartLearnerRadar"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-card col-6">
+            <div class="card-banner-header">Targeted Skill-Gap & iGOT Learning Paths</div>
+            <div class="card-body">
+              <div class="sub-section-title">Automated Skill Gap Recommendations</div>
+              <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+                <div class="level-row" style="border-left-color:#EF4444;">
+                  <div>
+                    <strong>AI & Machine Learning in Governance</strong><br />
+                    <small style="color:var(--text-muted);">Gap Level: Urgent | Current: 45% vs Target: 80%</small>
+                  </div>
+                  <button class="btn-login" style="padding:4px 12px; font-size:0.78rem;">Enroll iGOT</button>
+                </div>
+                <div class="level-row" style="border-left-color:#F59E0B;">
+                  <div>
+                    <strong>Python Data Wrangling & Scripting</strong><br />
+                    <small style="color:var(--text-muted);">Gap Level: Moderate | Current: 62% vs Target: 85%</small>
+                  </div>
+                  <button class="btn-login" style="padding:4px 12px; font-size:0.78rem;">Enroll iGOT</button>
+                </div>
+              </div>
+              <div class="sub-section-title">NSSTA & iGOT Badges Earned</div>
+              <div style="display:flex; gap:10px;">
+                <span class="q-badge" style="background:#FEF3C7; color:#B45309;"><i class="fas fa-medal"></i> iGOT
+                  Master
+                  Analyst</span>
+                <span class="q-badge" style="background:#E0E7FF; color:#4338CA;"><i class="fas fa-star"></i> Viksit
+                  Bharat
+                  Innovator</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 4: ADMIN ANALYTICS & PREDICTIVE NEEDS -->
+      <div id="sec-admin" class="view-section" style="display: none;">
+        <div class="dashboard-grid">
+          <div class="dash-card col-6">
+            <div class="card-banner-header">Workforce Cadre Compliance Analytics</div>
+            <div class="card-body">
+              <div style="height: 240px; position:relative;">
+                <canvas id="chartAdminDept"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="dash-card col-6">
+            <div class="card-banner-header">Predictive Capacity-Building Needs (2026-2030)</div>
+            <div class="card-body">
+              <div class="level-list">
+                <div class="level-row" style="border-left-color:#EF4444;">
+                  <div>
+                    <strong>Big Data & Geo-spatial Analytics</strong><br />
+                    <small style="color:var(--text-muted);">Supply: 24% | Demand: 85% by 2027</small>
+                  </div>
+                  <span class="q-badge" style="background:#FEE2E2; color:#B91C1C;">Critical Gap</span>
+                </div>
+                <div class="level-row" style="border-left-color:#F59E0B;">
+                  <div>
+                    <strong>AI-Powered Survey Quality Auditing</strong><br />
+                    <small style="color:var(--text-muted);">Supply: 31% | Demand: 90% by 2027</small>
+                  </div>
+                  <span class="q-badge" style="background:#FEF3C7; color:#B45309;">High Risk</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div> <!-- END LOGGED-IN DASHBOARD -->
+
+  </main>
+
+  <!-- 4. STATBOT AI ASSISTANT WIDGET -->
+  <div class="statbot-widget">
+    <button class="statbot-trigger" id="statbotTrigger" title="Karmayogi AI Assistant">
+      <i class="fas fa-robot"></i>
+    </button>
+    <div class="statbot-chat-window" id="statbotChatWindow">
+      <div class="chat-header">
+        <span><i class="fas fa-robot"></i> Karmayogi StatBot AI</span>
+        <i class="fas fa-times" id="statbotClose" style="cursor:pointer;"></i>
+      </div>
+      <div class="chat-messages" id="statbotMsgs">
+        <div class="msg bot">
+          Namaste! I am Karmayogi StatBot AI Assistant. How can I assist your statistical competency learning today?
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" id="statbotInput" placeholder="Ask StatBot a question...">
+        <button id="statbotSend">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. LOGIN / REGISTER MODAL (Connected to PostgreSQL Backend) -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+      <h3 style="margin-bottom:8px; color:var(--card-dark-blue); text-align:center;">
+        <i class="fas fa-shield-halved"></i> iGOT Employee Registration
+      </h3>
+      <p style="text-align:center; font-size:0.82rem; color:var(--text-muted); margin-bottom:20px;">
+        Government of India Official & Statistical Cadre Portal
+      </p>
+
+      <form id="authForm">
+        <div style="margin-bottom:14px;">
+          <label style="font-size:0.82rem; font-weight:700; display:block; margin-bottom:4px;">Govt Email ID</label>
+          <input type="email" id="authEmail" placeholder="official@gov.in"
+            style="width:100%; padding:10px; border-radius:8px; border:1px solid #CBD5E1;" required>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label style="font-size:0.82rem; font-weight:700; display:block; margin-bottom:4px;">Password</label>
+          <input type="password" id="authPassword" placeholder="••••••••"
+            style="width:100%; padding:10px; border-radius:8px; border:1px solid #CBD5E1;" required>
+        </div>
+
+        <button type="submit" id="btnAuthSubmit" class="btn-register" style="width:100%; border-radius:8px;">
+          Register & Save to PostgreSQL
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Script Includes -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
