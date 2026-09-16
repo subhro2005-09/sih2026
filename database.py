@@ -3,24 +3,17 @@ from datetime import datetime, timezone
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL").strip()
 
-# Normalize driver prefix for SQLAlchemy + Psycopg v3
+# Adjust dialect prefix for psycopg v3
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
 elif DATABASE_URL.startswith("postgresql://") and "+psycopg" not in DATABASE_URL:
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
-# Ensure SSL mode for cloud databases (Neon, Supabase, etc.)
 if DATABASE_URL and "sslmode" not in DATABASE_URL:
     DATABASE_URL += "?sslmode=require" if "?" not in DATABASE_URL else "&sslmode=require"
 
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    pool_recycle=1800,
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 class Employee(Base):
@@ -32,10 +25,27 @@ class Employee(Base):
     years_of_experience = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+engine = None
+SessionLocal = None
+
+if DATABASE_URL:
+    try:
+        engine = create_engine(
+            DATABASE_URL,
+            pool_pre_ping=True,
+            pool_recycle=1800,
+        )
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    except Exception as e:
+        print(f"Database initialization warning: {e}")
+
 def init_db():
-    Base.metadata.create_all(bind=engine)
+    if engine is not None:
+        Base.metadata.create_all(bind=engine)
 
 def get_db():
+    if SessionLocal is None:
+        raise RuntimeError("Database connection not configured or driver missing.")
     db = SessionLocal()
     try:
         yield db
