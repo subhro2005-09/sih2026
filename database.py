@@ -1,23 +1,36 @@
 import os
 import ssl
+from urllib.parse import urlsplit, urlunsplit
 from datetime import datetime, timezone
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+RAW_URL = os.getenv("DATABASE_URL", "").strip()
 
-# 1. Format URL strictly for pg8000
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+pg8000://", 1)
-elif DATABASE_URL.startswith("postgresql://"):
-    prefix = DATABASE_URL.split("://")[0]
-    DATABASE_URL = DATABASE_URL.replace(prefix, "postgresql+pg8000", 1)
+def prepare_database_url(url: str) -> str:
+    if not url:
+        return ""
 
-# 2. Strip any sslmode query parameter that causes pg8000 to crash
-if "?" in DATABASE_URL:
-    base_url, query_params = DATABASE_URL.split("?", 1)
-    params = [p for p in query_params.split("&") if not p.startswith("sslmode=")]
-    DATABASE_URL = base_url + ("?" + "&".join(params) if params else "")
+    # Force the pg8000 driver
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+pg8000://", 1)
+    elif url.startswith("postgresql://"):
+        prefix = url.split("://")[0]
+        url = url.replace(prefix, "postgresql+pg8000", 1)
+
+    # Strip ALL query parameters (sslmode, channel_binding, etc.)
+    # pg8000 handles SSL via connect_args, not URL query params.
+    parsed = urlsplit(url)
+    clean_url = urlunsplit((
+        parsed.scheme,
+        parsed.netloc,
+        parsed.path,
+        "",  # query string discarded completely
+        parsed.fragment
+    ))
+    return clean_url
+
+DATABASE_URL = prepare_database_url(RAW_URL)
 
 Base = declarative_base()
 
@@ -36,10 +49,12 @@ _SessionLocal = None
 def get_engine():
     global _engine, _SessionLocal
     if _engine is None and DATABASE_URL:
+        # Standard SSL context for cloud PostgreSQL (Neon, Supabase, RDS)
+        ssl_ctx = ssl.create_default_context()
+        ssl_ctx.check_hostname = False
+        ssl_ctx.verify_mode = ssl.CERT_NONE
+
         try:
-            # Create a standard verified SSL context for cloud DBs (Supabase, Neon, AWS RDS)
-            ssl_ctx = ssl.create_default_context()
-            
             _engine = create_engine(
                 DATABASE_URL,
                 connect_args={"ssl_context": ssl_ctx},
