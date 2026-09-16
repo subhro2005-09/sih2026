@@ -2,9 +2,10 @@ import os
 import uuid
 import shutil
 import logging
+import tempfile
 from pathlib import Path
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
@@ -28,8 +29,10 @@ from database import get_db, init_db, Employee, Base
 from auth import hash_password, verify_password, create_access_token
 
 BASE_DIR = Path(__file__).resolve().parent
-UPLOAD_DIR = BASE_DIR / "uploaded_docs"
-UPLOAD_DIR.mkdir(exist_ok=True)
+
+# Write to OS temporary directory (safe for Vercel/AWS Lambda serverless instances)
+UPLOAD_DIR = Path(tempfile.gettempdir()) / "uploaded_docs"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # 2. Database Models for Quiz History
 class QuizHistory(Base):
@@ -40,7 +43,7 @@ class QuizHistory(Base):
     score = Column(Integer)
     total_questions = Column(Integer)
     percentage = Column(Float)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 # 3. Lifespan & App Setup
 @asynccontextmanager
@@ -249,9 +252,8 @@ async def generate_quiz(topic: str = Form("General Assessment")):
         """
 
         models_to_try = [
-            "gemini-3.6-flash",
-            "gemini-3.7-flash",
-            "gemini-3.5-flash-lite",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
         ]
         response = None
 
@@ -276,7 +278,7 @@ async def generate_quiz(topic: str = Form("General Assessment")):
         if not response or not response.parsed:
             raise HTTPException(
                 status_code=503,
-                detail="ll models are currently busy. Please retry in a few seconds."
+                detail="All models are currently busy. Please retry in a few seconds."
             )
 
         return response.parsed.model_dump()
