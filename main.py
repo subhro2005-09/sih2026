@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 import shutil
 import logging
@@ -119,28 +120,40 @@ class QuizResultCreate(BaseModel):
 
 @app.post("/api/auth/register", status_code=status.HTTP_201_CREATED)
 def register_employee(data: EmployeeRegister, db: Session = Depends(get_db)):
-    existing = db.query(Employee).filter(Employee.email == data.email).first()
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email is already registered."
+    try:
+        existing = db.query(Employee).filter(Employee.email == data.email).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is already registered."
+            )
+
+        hashed = hash_password(data.password)
+
+        new_emp = Employee(
+            email=data.email,
+            hashed_password=hashed,
+            years_of_experience=data.years_of_experience,
         )
+        db.add(new_emp)
+        db.commit()
+        db.refresh(new_emp)
 
-    new_emp = Employee(
-        email=data.email,
-        hashed_password=hash_password(data.password),
-        years_of_experience=data.years_of_experience,
-    )
-    db.add(new_emp)
-    db.commit()
-    db.refresh(new_emp)
-
-    return {
-        "status": "success",
-        "message": "Employee registered successfully",
-        "employee_id": new_emp.id,
-        "email": new_emp.email,
-    }
+        return {
+            "status": "success",
+            "message": "Employee registered successfully",
+            "employee_id": new_emp.id,
+            "email": new_emp.email,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Registration failure: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Registration failed: {str(e)}"
+        )
 
 @app.post("/api/auth/login")
 def login_employee(data: EmployeeLogin, db: Session = Depends(get_db)):
@@ -251,43 +264,61 @@ async def generate_quiz(topic: str = Form("General Assessment")):
         {context_str}
         """
 
+        # Provide candidate models in fallback order
         models_to_try = [
-           "gemini-3.6-flash",
+            "gemini-3.6-flash",
+            "gemini-3.6-flash-8b",
         ]
+
         response = None
+        last_error = None
 
         for m in models_to_try:
-            try:
-                response = ai_client.models.generate_content(
-                    model=m,
-                    contents=prompt,
-                    config={
-                        "response_mime_type": "application/json",
-                        "response_schema": MCQQuizResponse,
-                        "temperature": 0.2,
-                    },
-                )
-                if response and response.parsed:
+            for attempt in range(3):
+                try:
+                    response = ai_client.models.generate_content(
+                        model=m,
+                        contents=prompt,
+                        config={
+                            "response_mime_type": "application/json",
+                            "response_schema": MCQQuizResponse,
+                            "temperature": 0.2,
+                        },
+                    )
+                    if response and response.parsed:
+                        break
+                except Exception as model_err:
+                    last_error = model_err
+                    err_str = str(model_err).lower()
+
+                    if any(code in err_str for code in ["503", "429", "unavailable", "resource_exhausted"]):
+                        logging.warning(f"Model {m} busy (attempt {attempt + 1}/3): {model_err}. Retrying...")
+                        time.sleep(1.5 * (2 ** attempt))
+                        continue
+
                     break
-            except Exception as model_err:
-                if "503" in str(model_err) or "UNAVAILABLE" in str(model_err):
-                    continue
-                raise model_err
+
+            if response and response.parsed:
+                break
 
         if not response or not response.parsed:
+            logging.error(f"All model attempts exhausted. Final error: {last_error}")
             raise HTTPException(
                 status_code=503,
-                detail="All models are currently busy. Please retry in a few seconds."
+                detail="AI service is currently busy handling high demand. Please retry in a few seconds."
             )
 
         return response.parsed.model_dump()
 
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error generating quiz: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 # 9. Frontend Static Asset Routes
 @app.get("/", include_in_schema=False)
+@app.get("/index.html", include_in_schema=False)
 def serve_index():
     index_file = BASE_DIR / "index.html"
     if not index_file.exists():
