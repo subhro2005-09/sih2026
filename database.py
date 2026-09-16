@@ -1,22 +1,23 @@
 import os
+import ssl
 from datetime import datetime, timezone
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
-# Convert URL to use the pure-Python pg8000 driver
+# 1. Format URL strictly for pg8000
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+pg8000://", 1)
-elif DATABASE_URL.startswith("postgresql://") and "+pg8000" not in DATABASE_URL:
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+pg8000://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    prefix = DATABASE_URL.split("://")[0]
+    DATABASE_URL = DATABASE_URL.replace(prefix, "postgresql+pg8000", 1)
 
-# Remove psycopg prefixes if present
-DATABASE_URL = DATABASE_URL.replace("+psycopg://", "+pg8000://")
-
-# Ensure sslmode for cloud databases
-if DATABASE_URL and "sslmode" not in DATABASE_URL:
-    DATABASE_URL += "?sslmode=require" if "?" not in DATABASE_URL else "&sslmode=require"
+# 2. Strip any sslmode query parameter that causes pg8000 to crash
+if "?" in DATABASE_URL:
+    base_url, query_params = DATABASE_URL.split("?", 1)
+    params = [p for p in query_params.split("&") if not p.startswith("sslmode=")]
+    DATABASE_URL = base_url + ("?" + "&".join(params) if params else "")
 
 Base = declarative_base()
 
@@ -29,19 +30,26 @@ class Employee(Base):
     years_of_experience = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-engine = None
-SessionLocal = None
+_engine = None
+_SessionLocal = None
 
 def get_engine():
-    global engine, SessionLocal
-    if engine is None and DATABASE_URL:
-        engine = create_engine(
-            DATABASE_URL,
-            pool_pre_ping=True,
-            pool_recycle=1800,
-        )
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    return engine
+    global _engine, _SessionLocal
+    if _engine is None and DATABASE_URL:
+        try:
+            # Create a standard verified SSL context for cloud DBs (Supabase, Neon, AWS RDS)
+            ssl_ctx = ssl.create_default_context()
+            
+            _engine = create_engine(
+                DATABASE_URL,
+                connect_args={"ssl_context": ssl_ctx},
+                pool_pre_ping=True,
+                pool_recycle=1800,
+            )
+            _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
+        except Exception as e:
+            print(f"Warning: Failed to initialize DB engine: {e}")
+    return _engine
 
 def init_db():
     eng = get_engine()
@@ -50,9 +58,9 @@ def init_db():
 
 def get_db():
     get_engine()
-    if SessionLocal is None:
-        raise RuntimeError("DATABASE_URL environment variable is missing or database engine failed to start.")
-    db = SessionLocal()
+    if _SessionLocal is None:
+        raise RuntimeError("DATABASE_URL is missing or invalid in environment variables.")
+    db = _SessionLocal()
     try:
         yield db
     finally:
