@@ -3,14 +3,18 @@ from datetime import datetime, timezone
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL").strip()
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
-# Adjust dialect prefix for psycopg v3
+# Convert URL to use the pure-Python pg8000 driver
 if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
-elif DATABASE_URL.startswith("postgresql://") and "+psycopg" not in DATABASE_URL:
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+pg8000://", 1)
+elif DATABASE_URL.startswith("postgresql://") and "+pg8000" not in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+pg8000://", 1)
 
+# Remove psycopg prefixes if present
+DATABASE_URL = DATABASE_URL.replace("+psycopg://", "+pg8000://")
+
+# Ensure sslmode for cloud databases
 if DATABASE_URL and "sslmode" not in DATABASE_URL:
     DATABASE_URL += "?sslmode=require" if "?" not in DATABASE_URL else "&sslmode=require"
 
@@ -28,24 +32,26 @@ class Employee(Base):
 engine = None
 SessionLocal = None
 
-if DATABASE_URL:
-    try:
+def get_engine():
+    global engine, SessionLocal
+    if engine is None and DATABASE_URL:
         engine = create_engine(
             DATABASE_URL,
             pool_pre_ping=True,
             pool_recycle=1800,
         )
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    except Exception as e:
-        print(f"Database initialization warning: {e}")
+    return engine
 
 def init_db():
-    if engine is not None:
-        Base.metadata.create_all(bind=engine)
+    eng = get_engine()
+    if eng is not None:
+        Base.metadata.create_all(bind=eng)
 
 def get_db():
+    get_engine()
     if SessionLocal is None:
-        raise RuntimeError("Database connection not configured or driver missing.")
+        raise RuntimeError("DATABASE_URL environment variable is missing or database engine failed to start.")
     db = SessionLocal()
     try:
         yield db
