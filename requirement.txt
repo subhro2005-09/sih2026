@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+python-multipart
+pydantic[email]
+sqlalchemy
+psycopg2-binary
+passlib[bcrypt]
+pyjwt
+qdrant-client
+google-genai
+llama-index-core
+llama-index-readers-file
+python-dotenv
+inngest
