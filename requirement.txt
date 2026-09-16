@@ -8,7 +8,7 @@ passlib[bcrypt]
 pyjwt
 qdrant-client
 google-genai
-llama-index-core
-llama-index-readers-file
+pypdf
+langchain-text-splitters
 python-dotenv
 inngest
