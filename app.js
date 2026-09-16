@@ -20,6 +20,27 @@ function checkAuthState() {
   }
   renderLoggedOutState();
 }
+async function requestQuiz(topicName, retryCount = 0) {
+  const formData = new FormData();
+  formData.append("topic", topicName);
+
+  const res = await fetch(`${API_BASE}/api/generate-quiz`, {
+    method: "POST",
+    body: formData
+  });
+
+  if (res.status === 503 && retryCount < 2) {
+    console.warn("Server indicated busy. Retrying in 2 seconds...");
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    return requestQuiz(topicName, retryCount + 1);
+  }
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.detail || "Failed to generate assessment.");
+  }
+  return data;
+}
 // Keep track of the active quiz score
 let currentQuizScore = {
   answered: 0,
