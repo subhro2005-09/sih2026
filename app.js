@@ -6,6 +6,37 @@ const API_BASE = "";
 let currentUser = null;
 let authMode = "login"; // 'login' or 'register'
 
+
+// Inside app_2.js - fileInput listener
+fileInput.addEventListener('change', async () => {
+  if (fileInput.files.length === 0) return;
+  const file = fileInput.files[0];
+  uploadText.textContent = `Analyzing ${file.name} for official competencies...`;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    // 1. Index document for Qdrant RAG Quiz Generation
+    const resUpload = await fetch(`${API_BASE}/api/upload`, { method: "POST", body: formData });
+    
+    // 2. Execute Competency & Skill Gap Analysis
+    const resGap = await fetch(`${API_BASE}/api/analyze-resume`, { method: "POST", body: formData });
+    const gapData = await resGap.json();
+
+    if (resUpload.ok && resGap.ok) {
+      uploadText.innerHTML = `✅ <b>${file.name}</b> evaluated! Analyzed ${gapData.overall_competencies_detected} competencies against MoSPI benchmarks.`;
+      
+      // Log top gaps to console / UI
+      console.log("Top Identified Skill Gaps:", gapData.identified_skill_gaps);
+    }
+  } catch (err) {
+    uploadText.textContent = "Error connecting to server.";
+  }
+});
+
+
+
 function checkAuthState() {
   const storedUser = localStorage.getItem('karmayogi_user');
   if (storedUser) {
