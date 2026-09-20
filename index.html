@@ -276,51 +276,32 @@
 
       <!-- SECTION 0: UPLOAD RESUME PAGE (Landed immediately after Login) -->
       <div id="sec-resume" class="view-section" style="display: block;">
-        <div class="resume-section-card">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-            <div>
-              <div class="resume-header-badge"><i class="fas fa-file-invoice"></i> iGOT Competency AI Engine</div>
-              <h2 style="font-size: 1.4rem; color: var(--card-dark-blue); margin-bottom: 4px;">
-                <i class="fas fa-cloud-arrow-up" style="color: var(--card-blue);"></i> Official Resume Upload & Skill Gap Mapping
-              </h2>
-              <p style="color: var(--text-muted); font-size: 0.9rem;">
-                Upload your Curriculum Vitae or official bio-data to map your qualifications, extract statistical & digital competencies, and get AI-customized iGOT learning pathways.
-              </p>
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <span class="q-badge" style="background:#DCFCE7; color:#15803D; font-size:0.8rem; padding:6px 12px;">
-                <i class="fas fa-circle-check"></i> Session Verified
-              </span>
-            </div>
-          </div>
+        <div class="quiz-engine-card">
+          <h2><i class="fas fa-file-invoice" style="color:#1A73E8;"></i> Official Resume & User Data Intelligence Engine</h2>
+          <p style="color:var(--text-muted); margin-bottom:20px; font-size:0.92rem;">
+            Upload your official resume or user data document (PDF, DOCX, TXT) to automatically parse candidate credentials, extract technical & statistical competencies, calculate iGOT cadre readiness score, and bridge identified skill gaps.
+          </p>
 
-          <!-- DROPZONE -->
-          <div class="resume-dropzone-box" id="resumeDropzone">
-            <div class="resume-icon-circle">
-              <i class="fas fa-file-pdf"></i>
-            </div>
-            <h3 id="resumeDropTitle" style="font-size: 1.15rem; color: var(--text-dark); font-weight: 700;">
-              Drag & Drop Your Resume / CV Document Here
-            </h3>
-            <p id="resumeDropSub" style="color: var(--text-muted); font-size: 0.85rem; margin-top: 6px;">
-              Supports PDF, DOCX, DOC, or TXT formats (Max size: 15MB)
-            </p>
+          <div class="uploader-box" id="resumeDropzone">
+            <div class="uploader-icon"><i class="fas fa-cloud-arrow-up"></i></div>
+            <h3 id="resumeDropTitle">Drag & Drop User Data PDF / Resume Here</h3>
+            <p id="resumeDropSub" style="color:var(--text-muted); font-size:0.85rem; margin-top:4px;">Supports PDF, DOCX, or TXT documents (User Data PDF)</p>
             <input type="file" id="resumeFileInput" accept=".pdf,.docx,.doc,.txt" style="display: none;" />
-
-            <div class="resume-upload-actions">
-              <button class="btn-resume-primary" id="btnSelectResumeFile">
-                <i class="fas fa-folder-open"></i> Browse File & Upload
+            
+            <div style="margin-top:16px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+              <button class="btn-generate-ai" id="btnSelectResumeFile">
+                <i class="fas fa-folder-open"></i> Upload & Extract User Resume PDF
               </button>
-              <button class="btn-resume-secondary" id="btnLoadDemoResume">
-                <i class="fas fa-magic"></i> Load Sample ISS Cadre Resume
+              <button class="btn-generate-ai" id="btnLoadDemoResume" style="background: linear-gradient(135deg, #FF9933 0%, #E68A00 100%);">
+                <i class="fas fa-magic"></i> Load Sample ISS Cadre PDF
               </button>
             </div>
           </div>
 
           <!-- PROGRESS BAR -->
-          <div class="resume-progress-bar-container" id="resumeProgressContainer">
+          <div class="resume-progress-bar-container" id="resumeProgressContainer" style="display:none; margin-top:20px;">
             <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 700; color: var(--card-dark-blue); margin-bottom: 6px;">
-              <span id="resumeProgressText">Extracting NLP Entities & Skills...</span>
+              <span id="resumeProgressText">Parsing User Data PDF & Extracting Entities...</span>
               <span id="resumeProgressPercent">0%</span>
             </div>
             <div class="resume-progress-track">
@@ -328,8 +309,11 @@
             </div>
           </div>
 
-          <!-- PARSED RESULTS AREA -->
-          <div class="resume-results-container" id="resumeResultsArea">
+          <!-- PARSED RESULTS OUTPUT AREA -->
+          <div class="quiz-output-area" id="resumeResultsArea" style="display: none; margin-top:24px;">
+            <h3 style="margin-bottom:16px; color:var(--card-dark-blue);"><i class="fas fa-clipboard-check"></i>
+              Extracted User Data & Competency Analysis</h3>
+            
             <!-- Profile Summary Banner -->
             <div class="resume-profile-card">
               <div class="resume-profile-info">
@@ -341,13 +325,13 @@
                   <h3 style="font-size: 1.3rem; font-weight: 800; margin-top: 2px;" id="res-candidate-name">Subhrajit Roy</h3>
                   <div style="font-size: 0.85rem; opacity: 0.9;" id="res-candidate-title">Senior Statistical Officer • NSSO Field Operations</div>
                   <div style="font-size: 0.78rem; opacity: 0.75; margin-top: 4px;" id="res-candidate-meta">
-                    <i class="fas fa-envelope"></i> official.iss@gov.in &nbsp;|&nbsp; <i class="fas fa-briefcase"></i> 12 Years Service Experience
+                    <i class="fas fa-envelope"></i> official.iss@gov.in &nbsp;|&nbsp; <i class="fas fa-file-pdf"></i> Parsed from User Data PDF
                   </div>
                 </div>
               </div>
               <div class="resume-score-pill">
                 <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; opacity: 0.8;">iGOT Role Match</div>
-                <div class="resume-score-val" id="res-match-score">92%</div>
+                <div class="resume-score-val" id="res-match-score">94%</div>
                 <div style="font-size: 0.72rem; color: #34D399; font-weight: 700;">High Cadre Readiness</div>
               </div>
             </div>
@@ -400,14 +384,44 @@
 
                   <div style="margin-top: 18px; display: flex; gap: 10px;">
                     <button class="btn-register" id="btnSyncProfile" style="flex: 1; border-radius: 8px; padding: 10px;">
-                      <i class="fas fa-sync-alt"></i> Sync Resume Skills to Profile
+                      <i class="fas fa-sync-alt"></i> Sync User Data PDF Skills to Profile
                     </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
+        <!-- Resume Upload History Card (Matching Quiz History Card) -->
+        <div class="card" style="background:#fff; border-radius:12px; padding:20px; margin-top:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h4 style="margin:0; color:#003366; font-size:1.05rem;">
+              <i class="fas fa-history" style="color:#1A73E8; margin-right:8px;"></i> Uploaded Resume & Document History
+            </h4>
+            <button class="btn-login" onclick="loadResumeHistory()" style="font-size:0.75rem; padding:4px 10px;">
+              <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">
+              <thead>
+                <tr style="border-bottom:2px solid #EDF2F7; color:#64748B;">
+                  <th style="padding:8px;">Document Name</th>
+                  <th style="padding:8px;">Candidate Name</th>
+                  <th style="padding:8px;">Cadre Alignment</th>
+                  <th style="padding:8px;">Parsed Date</th>
+                  <th style="padding:8px;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="resumeHistoryTableBody">
+                <tr>
+                  <td colspan="5" style="text-align:center; padding:15px; color:#94A3B8;">No uploaded resume documents logged yet. Upload your PDF resume above!</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
