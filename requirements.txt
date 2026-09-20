@@ -14,3 +14,4 @@ python-dotenv
 inngest
 onnxruntime
 transformers
+huggingface_hub
