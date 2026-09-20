@@ -375,7 +375,8 @@ function initResumeUploader() {
 
   btnDemo?.addEventListener('click', (e) => {
     e.stopPropagation();
-    renderParsedResumeResults({
+    const demoData = {
+      fileName: "Subhrajit_Roy_ISS_CV.pdf",
       name: currentUser ? currentUser.name : "SUBHRAJIT ROY",
       title: "Senior Statistical Officer • NSSO Field Operations, MoSPI",
       cadre: "INDIAN STATISTICAL SERVICE (ISS)",
@@ -387,7 +388,10 @@ function initResumeUploader() {
         { title: "Big Data Analytics & Cloud Infrastructure", code: "IGOT-DAT-402", duration: "8.0 Hours" },
         { title: "National Data Governance Standards", code: "IGOT-GOV-204", duration: "4.0 Hours" }
       ]
-    });
+    };
+    renderParsedResumeResults(demoData);
+    recordResumeHistory("Subhrajit_Roy_ISS_CV.pdf", demoData);
+    localStorage.setItem('karmayogi_resume', JSON.stringify(demoData));
   });
 
   document.getElementById('btnSyncProfile')?.addEventListener('click', () => {
@@ -402,6 +406,7 @@ function initResumeUploader() {
       renderParsedResumeResults(data);
     } catch (e) {}
   }
+  loadResumeHistory();
 }
 
 async function processResumeFile(file) {
@@ -447,10 +452,11 @@ async function processResumeFile(file) {
     if (progressPercent) progressPercent.textContent = '100%';
 
     const parsedData = {
+      fileName: file.name,
       name: currentUser ? currentUser.name : file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").toUpperCase(),
       title: "Senior Statistical Officer • MoSPI Cadre",
       cadre: "MINISTRY OF STATISTICS & PROGRAMME IMPLEMENTATION",
-      score: `${Math.min(100, gapData.overall_competencies_detected * 10 + 40)}%`,
+      score: `${Math.min(100, (gapData.overall_competencies_detected || 5) * 10 + 40)}%`,
       skills: gapData.top_matched_skills && gapData.top_matched_skills.length > 0 
         ? gapData.top_matched_skills.map(s => typeof s === 'object' ? (s.name || s.competency || JSON.stringify(s)) : s)
         : ["Statistical Survey Operations", "Data Auditing", "Report Writing"],
@@ -468,6 +474,7 @@ async function processResumeFile(file) {
       if (dropTitle) dropTitle.innerHTML = `✅ <b>${file.name}</b> Analyzed & Indexed Successfully!`;
       if (dropSub) dropSub.textContent = "Your ONNX competency insights have been generated below.";
       renderParsedResumeResults(parsedData);
+      recordResumeHistory(file.name, parsedData);
       localStorage.setItem('karmayogi_resume', JSON.stringify(parsedData));
     }, 300);
 
@@ -475,6 +482,47 @@ async function processResumeFile(file) {
     if (progressContainer) progressContainer.style.display = 'none';
     alert("Connection Error: Could not reach the competency analysis server.");
   }
+}
+
+function loadResumeHistory() {
+  const tbody = document.getElementById('resumeHistoryTableBody');
+  if (!tbody) return;
+
+  const history = JSON.parse(localStorage.getItem('karmayogi_resume_history') || '[]');
+  if (history.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:#94A3B8;">No uploaded resume documents logged yet. Upload your PDF resume above!</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = history.map(item => `
+    <tr style="border-bottom:1px solid #F1F5F9;">
+      <td style="padding:10px 8px; font-weight:600; color:#1E293B;"><i class="fas fa-file-pdf" style="color:#DC2626; margin-right:6px;"></i> ${item.fileName}</td>
+      <td style="padding:10px 8px; color:#334155;">${item.name}</td>
+      <td style="padding:10px 8px; font-weight:700; color:#16A34A;">${item.score} Match</td>
+      <td style="padding:10px 8px; color:#64748B;">${item.date}</td>
+      <td style="padding:10px 8px;">
+        <span style="background:#DCFCE7; color:#15803D; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-weight:600;">Indexed</span>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function recordResumeHistory(fileName, data) {
+  const history = JSON.parse(localStorage.getItem('karmayogi_resume_history') || '[]');
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  const newItem = {
+    fileName: fileName,
+    name: data.name || (currentUser ? currentUser.name : "Subhrajit Roy"),
+    score: data.score || "94%",
+    date: dateStr
+  };
+
+  history.unshift(newItem);
+  if (history.length > 10) history.pop();
+  localStorage.setItem('karmayogi_resume_history', JSON.stringify(history));
+  loadResumeHistory();
 }
 
 function renderParsedResumeResults(data) {
