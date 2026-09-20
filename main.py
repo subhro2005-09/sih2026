@@ -270,8 +270,8 @@ async def generate_quiz(topic: str = Form("General Assessment")):
 
         # Fallback Gemini models
         models_to_try = [
-            "gemini-2.5-flash",
-            "gemini-2.0-flash",
+            "gemini-3.5-flash",
+            "gemini-3.0-flash",
         ]
 
         response = None
