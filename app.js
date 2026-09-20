@@ -1,46 +1,6 @@
-
-
-
-
-
-
 // Main Application Logic for iGOT Karmayogi Skill Intelligence Platform
 
 const API_BASE = "";
-async function uploadOfficialResume(fileInputId) {
-  const fileInput = document.getElementById(fileInputId);
-  if (!fileInput || fileInput.files.length === 0) {
-    alert("Please select a resume PDF file to upload.");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("file", fileInput.files[0]);
-
-  try {
-    const res = await fetch("/api/analyze-resume-gap", {
-      method: "POST",
-      body: formData
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      alert(`Analysis Failed: ${data.detail || "Could not analyze resume."}`);
-      return;
-    }
-
-    // Example rendering results to console/UI
-    console.log("Readiness Score:", data.readiness_score);
-    console.log("Missing Skill Gaps:", data.missing_gaps);
-    console.log("Recommended iGOT Courses:", data.recommended_courses);
-
-    alert(`Resume Analyzed! Readiness: ${data.readiness_score}. Recommended ${data.recommended_courses.length} courses from iGOT catalogue.`);
-
-  } catch (err) {
-    console.error("Resume Upload Error:", err);
-  }
-}
-//pasta
 
 // Authentication & Session Management State
 let currentUser = null;
