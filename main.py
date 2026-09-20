@@ -19,8 +19,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
-import torch
-import torch.nn.functional as F
 import inngest
 import inngest.fast_api
 from google import genai
@@ -212,7 +210,7 @@ def get_quiz_history(employee_id: int, db: Session = Depends(get_db)):
         for r in records
     ]
 
-# 8. RAG Document Indexing, Assessment Generation, & Resume Skill Gap Analysis
+# 8. RAG Document Indexing & Assessment Generation
 @app.post("/api/upload")
 async def upload_pdf(file: UploadFile = File(...)):
     if not file.filename.endswith(".pdf"):
@@ -236,123 +234,6 @@ async def upload_pdf(file: UploadFile = File(...)):
     return {
         "status": "ok",
         "message": f"{file.filename} processed: {len(chunks)} chunks embedded and stored in Qdrant."
-    }
-
-# NEW ENDPOINT: Resume Skill Gap Analysis & iGOT Course Recommendation
-TARGET_STATISTICAL_COMPETENCIES = [
-    "Advanced Data Analytics and R Programming",
-    "Machine Learning and AI Applications in Public Governance",
-    "Sample Survey Methods and NSSO Design Standards",
-    "National Accounts Aggregates and CPI/WPI Indexing",
-    "Data Privacy Laws and Cybersecurity for Officials",
-    "Public Sector Project Management and Decision Making"
-]
-
-FAKED_IGOT_CATALOGUE = [
-    {
-        "id": "IGOT-STAT-101",
-        "title": "Advanced Data Analytics for Official Statistics",
-        "provider": "NSSTA & iGOT Karmayogi",
-        "competency": "Domain",
-        "skills": ["R Programming", "Sample Survey", "Data Scrubbing"]
-    },
-    {
-        "id": "IGOT-AI-202",
-        "title": "Machine Learning Applications in Public Governance",
-        "provider": "iGOT Karmayogi Bharat",
-        "competency": "Domain",
-        "skills": ["Python", "Predictive Analytics", "NLP"]
-    },
-    {
-        "id": "IGOT-GOV-301",
-        "title": "Jan Bhagidari & Public Service Delivery Excellence",
-        "provider": "Karmayogi Academy",
-        "competency": "Behavioral",
-        "skills": ["Communication", "Empathy", "Citizen Service"]
-    },
-    {
-        "id": "IGOT-STAT-404",
-        "title": "National Sample Survey (NSS) Methodology & Standards",
-        "provider": "NSSTA National Training Centre",
-        "competency": "Functional",
-        "skills": ["Sampling Design", "Survey Audit", "Indicator Calculation"]
-    }
-]
-
-@app.post("/api/analyze-resume-gap")
-async def analyze_resume_gap(file: UploadFile = File(...)):
-    if not file.filename.endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Please upload a valid PDF resume.")
-
-    file_path = UPLOAD_DIR / file.filename
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    chunks = load_and_chunk_pdf(str(file_path))
-    if not chunks:
-        raise HTTPException(status_code=400, detail="Could not extract text from uploaded resume PDF.")
-
-    # Generate embeddings using existing embed_text helper
-    resume_vecs = torch.tensor(embed_text(chunks))
-    target_vecs = torch.tensor(embed_text(TARGET_STATISTICAL_COMPETENCIES))
-
-    if resume_vecs.numel() == 0 or target_vecs.numel() == 0:
-        raise HTTPException(status_code=500, detail="Failed to generate embeddings for comparison.")
-
-    # Normalize vectors for cosine similarity
-    resume_vecs = F.normalize(resume_vecs, p=2, dim=1)
-    target_vecs = F.normalize(target_vecs, p=2, dim=1)
-
-    similarity_matrix = torch.mm(target_vecs, resume_vecs.T)
-
-    matched_competencies = []
-    missing_gaps = []
-
-    for idx, target_skill in enumerate(TARGET_STATISTICAL_COMPETENCIES):
-        max_score, _ = torch.max(similarity_matrix[idx], dim=0)
-        score = float(max_score.item())
-
-        if score >= 0.65:
-            matched_competencies.append({"competency": target_skill, "similarity_score": round(score, 2)})
-        else:
-            missing_gaps.append({"competency": target_skill, "similarity_score": round(score, 2)})
-
-    # Map missing gaps to catalogue items
-    course_texts = [c["title"] + " " + " ".join(c["skills"]) for c in FAKED_IGOT_CATALOGUE]
-    course_vecs = F.normalize(torch.tensor(embed_text(course_texts)), p=2, dim=1)
-
-    gap_names = [g["competency"] for g in missing_gaps]
-    recommended_courses = []
-
-    if gap_names and course_vecs.numel() > 0:
-        gap_vecs = F.normalize(torch.tensor(embed_text(gap_names)), p=2, dim=1)
-        gap_course_sim = torch.mm(gap_vecs, course_vecs.T)
-
-        recommended_ids = set()
-        for g_idx, gap_name in enumerate(gap_names):
-            best_score, best_course_idx = torch.max(gap_course_sim[g_idx], dim=0)
-            c_score = float(best_score.item())
-            course = FAKED_IGOT_CATALOGUE[best_course_idx.item()]
-
-            if course["id"] not in recommended_ids:
-                recommended_ids.add(course["id"])
-                recommended_courses.append({
-                    "course_id": course["id"],
-                    "title": course["title"],
-                    "provider": course["provider"],
-                    "competency": course["competency"],
-                    "matched_for_gap": gap_name,
-                    "relevance_score": round(c_score, 2)
-                })
-
-    readiness = round((len(matched_competencies) / len(TARGET_STATISTICAL_COMPETENCIES)) * 100, 1)
-
-    return {
-        "filename": file.filename,
-        "readiness_score": f"{readiness}%",
-        "matched_competencies": matched_competencies,
-        "missing_gaps": missing_gaps,
-        "recommended_courses": recommended_courses
     }
 
 @app.post("/api/generate-quiz")
@@ -383,6 +264,7 @@ async def generate_quiz(topic: str = Form("General Assessment")):
         {context_str}
         """
 
+        # Provide candidate models in fallback order
         models_to_try = [
             "gemini-3.6-flash",
             "gemini-3.6-flash-8b",
