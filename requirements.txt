@@ -12,4 +12,3 @@ google-genai
 pypdf
 python-dotenv
 inngest
-torch
