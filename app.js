@@ -5,37 +5,15 @@ const API_BASE = "";
 // Authentication & Session Management State
 let currentUser = null;
 let authMode = "login"; // 'login' or 'register'
+let currentUploadedFileName = "";
 
-
-// Inside app_2.js - fileInput listener
-fileInput.addEventListener('change', async () => {
-  if (fileInput.files.length === 0) return;
-  const file = fileInput.files[0];
-  uploadText.textContent = `Analyzing ${file.name} for official competencies...`;
-
-  const formData = new FormData();
-  formData.append("file", file);
-
-  try {
-    // 1. Index document for Qdrant RAG Quiz Generation
-    const resUpload = await fetch(`${API_BASE}/api/upload`, { method: "POST", body: formData });
-    
-    // 2. Execute Competency & Skill Gap Analysis
-    const resGap = await fetch(`${API_BASE}/api/analyze-resume`, { method: "POST", body: formData });
-    const gapData = await resGap.json();
-
-    if (resUpload.ok && resGap.ok) {
-      uploadText.innerHTML = `✅ <b>${file.name}</b> evaluated! Analyzed ${gapData.overall_competencies_detected} competencies against MoSPI benchmarks.`;
-      
-      // Log top gaps to console / UI
-      console.log("Top Identified Skill Gaps:", gapData.identified_skill_gaps);
-    }
-  } catch (err) {
-    uploadText.textContent = "Error connecting to server.";
-  }
-});
-
-
+// Keep track of the active quiz score
+let currentQuizScore = {
+  answered: 0,
+  correct: 0,
+  total: 0,
+  topic: ""
+};
 
 function checkAuthState() {
   const storedUser = localStorage.getItem('karmayogi_user');
@@ -51,6 +29,7 @@ function checkAuthState() {
   }
   renderLoggedOutState();
 }
+
 async function requestQuiz(topicName, retryCount = 0) {
   const formData = new FormData();
   formData.append("topic", topicName);
@@ -72,30 +51,70 @@ async function requestQuiz(topicName, retryCount = 0) {
   }
   return data;
 }
-// Keep track of the active quiz score
-let currentQuizScore = {
-  answered: 0,
-  correct: 0,
-  total: 0,
-  topic: ""
-};
 
-// Update renderQuizQuestions to track score and topic
-const originalRenderQuizQuestions = renderQuizQuestions;
 function renderQuizQuestions(quizData) {
+  const container = document.getElementById('questionsContainer');
+  if (!container) return;
+
   currentQuizScore = {
     answered: 0,
     correct: 0,
     total: quizData.length,
     topic: currentUploadedFileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ") || "General Assessment"
   };
-  originalRenderQuizQuestions(quizData);
+
+  container.innerHTML = quizData.map((q, idx) => {
+    let correctIdx = q.answer;
+    if (typeof q.answer === 'string') {
+      const charCode = q.answer.trim().toUpperCase().charCodeAt(0);
+      if (charCode >= 65 && charCode <= 68) {
+        correctIdx = charCode - 65;
+      } else {
+        correctIdx = parseInt(q.answer, 10) || 0;
+      }
+    }
+
+    return `
+    <div class="question-card" id="q-card-${idx}">
+      <div class="q-title">
+        <span class="q-badge">${q.difficulty || 'Intermediate'}</span>
+        <span class="q-badge" style="background:#E0F2FE; color:#0369A1;">${q.competency || 'General'}</span>
+        <br/><br/>
+        <b>Q${idx + 1}. ${q.question}</b>
+      </div>
+      <div class="options-list">
+        ${q.options.map((opt, oIdx) => `
+          <button class="opt-btn" onclick="checkAnswer(${idx}, ${oIdx},${correctIdx})">
+            ${String.fromCharCode(65 + oIdx)}.${opt}
+          </button>
+        `).join('')}
+      </div>
+      <div class="explanation-box" id="exp-${idx}">
+        <strong>💡 Pedagogical Explanation:</strong> ${q.explanation || 'No explanation provided.'}
+      </div>
+    </div>
+    `;
+  }).join('');
 }
 
-// Modify checkAnswer to record selection and submit upon completion
-const originalCheckAnswer = checkAnswer;
 function checkAnswer(qId, selectedIdx, correctIdx) {
-  originalCheckAnswer(qId, selectedIdx, correctIdx);
+  const card = document.getElementById(`q-card-${qId}`);
+  if (!card) return;
+  const buttons = card.querySelectorAll('.opt-btn');
+  const expBox = document.getElementById(`exp-${qId}`);
+
+  buttons.forEach((btn, idx) => {
+    btn.disabled = true;
+    if (idx === correctIdx) {
+      btn.classList.add('correct');
+    } else if (idx === selectedIdx && selectedIdx !== correctIdx) {
+      btn.classList.add('wrong');
+    }
+  });
+
+  if (expBox) {
+    expBox.style.display = 'block';
+  }
 
   currentQuizScore.answered += 1;
   if (selectedIdx === correctIdx) {
@@ -171,7 +190,6 @@ function loginUser(userData) {
   const formattedTime = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ", " +
     now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + " IST";
 
-  // Format user details returned from PostgreSQL
   currentUser = {
     id: userData.id || null,
     email: userData.email,
@@ -233,6 +251,7 @@ function renderLoggedInState() {
   if (loginEl) loginEl.textContent = currentUser.lastLogin || "Today, 14:15 IST";
 
   updateTimeframeStats();
+  loadQuizHistory();
 
   // Resize charts after container becomes visible
   setTimeout(() => {
@@ -282,7 +301,7 @@ function updateTimeframeStats() {
   }
 }
 
-// Authentication Form Listener (Handles Verification & Registration)
+// Authentication Form Listener
 document.getElementById('authForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('btnAuthSubmit');
@@ -292,7 +311,6 @@ document.getElementById('authForm')?.addEventListener('submit', async (e) => {
   const password = document.getElementById('authPassword').value;
 
   if (authMode === "login") {
-    // LOGIN FLOW: Verifies email & password with PostgreSQL
     try {
       const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
@@ -307,7 +325,6 @@ document.getElementById('authForm')?.addEventListener('submit', async (e) => {
         return;
       }
 
-      // Save token and login user
       localStorage.setItem('authToken', data.access_token);
       loginUser(data.user);
       alert(`Welcome, ${data.user.email}! Access granted.`);
@@ -319,7 +336,6 @@ document.getElementById('authForm')?.addEventListener('submit', async (e) => {
     }
 
   } else {
-    // REGISTRATION FLOW: Inserts new user into PostgreSQL
     const expVal = document.getElementById('authExp') ? (parseInt(document.getElementById('authExp').value, 10) || 5) : 5;
     try {
       const res = await fetch(`${API_BASE}/api/auth/register`, {
@@ -376,11 +392,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initStatBot();
   initA11y();
 
-  // Modal toggle listeners
   document.getElementById('btnToggleLogin')?.addEventListener('click', () => switchAuthMode('login'));
   document.getElementById('btnToggleRegister')?.addEventListener('click', () => switchAuthMode('register'));
 
-  // Quick Demo Login Event Handler
   document.getElementById('btnQuickDemoLogin')?.addEventListener('click', () => {
     loginUser({ email: "official.iss@gov.in", years_of_experience: 12, id: 101 });
   });
@@ -648,9 +662,7 @@ function initIndiaMap() {
   });
 }
 
-// 6. DYNAMIC AI QUIZ GENERATOR ENGINE (CONNECTED TO FASTAPI)
-let currentUploadedFileName = "";
-
+// 6. DYNAMIC AI QUIZ GENERATOR & COMPETENCY ENGINE (FASTAPI INTEGRATED)
 function initQuizGenerator() {
   const uploadDropzone = document.getElementById('uploadDropzone');
   const fileInput = document.getElementById('pdfFileInput');
@@ -670,24 +682,27 @@ function initQuizGenerator() {
     if (fileInput.files.length === 0) return;
     const file = fileInput.files[0];
     currentUploadedFileName = file.name;
-    uploadText.textContent = `Uploading and processing: ${file.name}...`;
+    uploadText.textContent = `Analyzing ${file.name} for official competencies...`;
 
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      const res = await fetch(`${API_BASE}/api/upload`, {
-        method: "POST",
-        body: formData
-      });
-      const data = await res.json();
-      if (res.ok) {
-        uploadText.innerHTML = `✅ <b>${file.name}</b> indexed successfully! Click below to generate MCQs.`;
+      // 1. Index document for Qdrant RAG Quiz Generation
+      const resUpload = await fetch(`${API_BASE}/api/upload`, { method: "POST", body: formData });
+      
+      // 2. Execute Competency & Skill Gap Analysis
+      const resGap = await fetch(`${API_BASE}/api/analyze-resume`, { method: "POST", body: formData });
+      const gapData = await resGap.json();
+
+      if (resUpload.ok && resGap.ok) {
+        uploadText.innerHTML = `✅ <b>${file.name}</b> evaluated! Analyzed ${gapData.overall_competencies_detected} competencies against MoSPI benchmarks.`;
+        console.log("Top Identified Skill Gaps:", gapData.identified_skill_gaps);
       } else {
-        uploadText.textContent = `Upload error: ${data.detail || "Failed to process"}`;
+        uploadText.textContent = `Processing error. Could not complete evaluation.`;
       }
     } catch (err) {
-      uploadText.textContent = "Failed to connect to server.";
+      uploadText.textContent = "Error connecting to server.";
     }
   });
 
@@ -727,64 +742,6 @@ function initQuizGenerator() {
       btnGenerate.innerHTML = `<i class="fas fa-brain"></i> Generate AI Assessment (MCQs)`;
     }
   });
-}
-
-function renderQuizQuestions(quizData) {
-  const container = document.getElementById('questionsContainer');
-  if (!container) return;
-
-  container.innerHTML = quizData.map((q, idx) => {
-    let correctIdx = q.answer;
-    if (typeof q.answer === 'string') {
-      const charCode = q.answer.trim().toUpperCase().charCodeAt(0);
-      if (charCode >= 65 && charCode <= 68) {
-        correctIdx = charCode - 65;
-      } else {
-        correctIdx = parseInt(q.answer, 10) || 0;
-      }
-    }
-
-    return `
-    <div class="question-card" id="q-card-${idx}">
-      <div class="q-title">
-        <span class="q-badge">${q.difficulty || 'Intermediate'}</span>
-        <span class="q-badge" style="background:#E0F2FE; color:#0369A1;">${q.competency || 'General'}</span>
-        <br/><br/>
-        <b>Q${idx + 1}. ${q.question}</b>
-      </div>
-      <div class="options-list">
-        ${q.options.map((opt, oIdx) => `
-          <button class="opt-btn" onclick="checkAnswer(${idx}, ${oIdx}, ${correctIdx})">
-            ${String.fromCharCode(65 + oIdx)}. ${opt}
-          </button>
-        `).join('')}
-      </div>
-      <div class="explanation-box" id="exp-${idx}">
-        <strong>💡 Pedagogical Explanation:</strong> ${q.explanation || 'No explanation provided.'}
-      </div>
-    </div>
-    `;
-  }).join('');
-}
-
-function checkAnswer(qId, selectedIdx, correctIdx) {
-  const card = document.getElementById(`q-card-${qId}`);
-  if (!card) return;
-  const buttons = card.querySelectorAll('.opt-btn');
-  const expBox = document.getElementById(`exp-${qId}`);
-
-  buttons.forEach((btn, idx) => {
-    btn.disabled = true;
-    if (idx === correctIdx) {
-      btn.classList.add('correct');
-    } else if (idx === selectedIdx && selectedIdx !== correctIdx) {
-      btn.classList.add('wrong');
-    }
-  });
-
-  if (expBox) {
-    expBox.style.display = 'block';
-  }
 }
 
 // 7. STATBOT AI CHAT ASSISTANT
