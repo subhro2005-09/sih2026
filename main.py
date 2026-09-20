@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-
+from competency import analyze_resume_gaps
 # 1. Load environment variables FIRST before any DB or API client initializes
 load_dotenv()
 
@@ -315,6 +315,63 @@ async def generate_quiz(topic: str = Form("General Assessment")):
     except Exception as e:
         logging.error(f"Error generating quiz: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+#new add
+
+# Define standard target competencies for a Senior Statistical Officer (SSO)
+TARGET_CADRE_REQUIREMENTS = {
+    "Survey Design": 5.0,
+    "Sampling": 5.0,
+    "National Accounts": 4.0,
+    "Price Statistics": 4.0,
+    "Labour Statistics": 4.0,
+    "Python": 4.0,
+    "R": 3.0,
+    "SQL": 4.0,
+    "Data Visualization": 4.0,
+    "AI/ML": 3.0,
+    "Cybersecurity": 3.0,
+    "Data Privacy": 4.0,
+    "Project Management": 4.0
+}
+
+@app.post("/api/analyze-resume")
+async def api_analyze_resume(file: UploadFile = File(...)):
+    """Extracts text from an uploaded PDF resume and analyzes skill gaps using ONNX MiniLM."""
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF resumes are supported.")
+
+    file_path = UPLOAD_DIR / file.filename
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        chunks = load_and_chunk_pdf(str(file_path))
+        if not chunks:
+            raise HTTPException(status_code=400, detail="Could not extract text from PDF resume.")
+
+        full_resume_text = "\n".join(chunks)
+        
+        # Execute ONNX competency engine
+        gap_results = analyze_resume_gaps(
+            resume_text=full_resume_text,
+            required_competencies=TARGET_CADRE_REQUIREMENTS
+        )
+
+        return {
+            "status": "success",
+            "filename": file.filename,
+            "overall_competencies_detected": len(gap_results["assessment"]["competencies"]),
+            "top_matched_skills": gap_results["assessment"]["competencies"][:5],
+            "identified_skill_gaps": gap_results["skill_gaps"]
+        }
+    except Exception as e:
+        logging.error(f"Error analyzing resume competency: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        await file.close()
+
+
 
 # 9. Frontend Static Asset Routes
 @app.get("/", include_in_schema=False)
