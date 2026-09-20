@@ -32,7 +32,7 @@ from auth import hash_password, verify_password, create_access_token
 
 BASE_DIR = Path(__file__).resolve().parent
 
-# Write to OS temporary directory (safe for serverless/ephemeral environments)
+# Write to OS temporary directory (safe for Vercel/AWS Lambda serverless instances)
 UPLOAD_DIR = Path(tempfile.gettempdir()) / "uploaded_docs"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -268,7 +268,7 @@ async def generate_quiz(topic: str = Form("General Assessment")):
         {context_str}
         """
 
-        # Provide candidate models in fallback order
+        # Fallback Gemini models
         models_to_try = [
             "gemini-2.5-flash",
             "gemini-2.0-flash",
@@ -321,8 +321,6 @@ async def generate_quiz(topic: str = Form("General Assessment")):
         raise HTTPException(status_code=500, detail=str(e))
 
 # 9. Competency Analysis Endpoint
-
-# Define standard target competencies for a Senior Statistical Officer (SSO)
 TARGET_CADRE_REQUIREMENTS = {
     "Survey Design": 5.0,
     "Sampling": 5.0,
