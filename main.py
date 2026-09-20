@@ -9,11 +9,11 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from competency import analyze_resume_gaps
+
 # 1. Load environment variables FIRST before any DB or API client initializes
 load_dotenv()
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, status
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, status, Response
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Column, Integer, String, Float, DateTime
@@ -23,6 +23,7 @@ import inngest
 import inngest.fast_api
 from google import genai
 
+from competency import analyze_resume_gaps
 from customtypes import RAGchunkandsrc, RAGUpsertresult, MCQQuizResponse
 from data_loader import load_and_chunk_pdf, embed_text
 from vetor_db import QdrantStorage
@@ -31,7 +32,7 @@ from auth import hash_password, verify_password, create_access_token
 
 BASE_DIR = Path(__file__).resolve().parent
 
-# Write to OS temporary directory (safe for Vercel/AWS Lambda serverless instances)
+# Write to OS temporary directory (safe for serverless/ephemeral environments)
 UPLOAD_DIR = Path(tempfile.gettempdir()) / "uploaded_docs"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -217,8 +218,11 @@ async def upload_pdf(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
     file_path = UPLOAD_DIR / file.filename
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    finally:
+        await file.close()
 
     chunks = load_and_chunk_pdf(str(file_path))
     if not chunks:
@@ -266,8 +270,8 @@ async def generate_quiz(topic: str = Form("General Assessment")):
 
         # Provide candidate models in fallback order
         models_to_try = [
-            "gemini-3.6-flash",
-            "gemini-3.6-flash-8b",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
         ]
 
         response = None
@@ -316,7 +320,7 @@ async def generate_quiz(topic: str = Form("General Assessment")):
         logging.error(f"Error generating quiz: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-#new add
+# 9. Competency Analysis Endpoint
 
 # Define standard target competencies for a Senior Statistical Officer (SSO)
 TARGET_CADRE_REQUIREMENTS = {
@@ -345,13 +349,13 @@ async def api_analyze_resume(file: UploadFile = File(...)):
     try:
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-            
+
         chunks = load_and_chunk_pdf(str(file_path))
         if not chunks:
             raise HTTPException(status_code=400, detail="Could not extract text from PDF resume.")
 
         full_resume_text = "\n".join(chunks)
-        
+
         # Execute ONNX competency engine
         gap_results = analyze_resume_gaps(
             resume_text=full_resume_text,
@@ -371,9 +375,11 @@ async def api_analyze_resume(file: UploadFile = File(...)):
     finally:
         await file.close()
 
+# 10. Frontend Static Asset Routes
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return Response(status_code=204)
 
-
-# 9. Frontend Static Asset Routes
 @app.get("/", include_in_schema=False)
 @app.get("/index.html", include_in_schema=False)
 def serve_index():
