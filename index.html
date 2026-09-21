@@ -256,9 +256,6 @@
         <button class="v-tab active" data-target="sec-resume">
           <i class="fas fa-file-arrow-up"></i> Upload Resume
         </button>
-        <button class="v-tab" data-target="sec-portal">
-          <i class="fas fa-columns"></i> iGOT Portal Overview
-        </button>
         <button class="v-tab" data-target="sec-ai-quiz">
           <i class="fas fa-brain"></i> AI Assessment Engine (MCQ Generator)
         </button>
@@ -393,78 +390,6 @@
         </div>
       </div>
 
-      <!-- SECTION 1: iGOT PORTAL OVERVIEW -->
-      <div id="sec-portal" class="view-section" style="display: none;">
-        <div class="dashboard-grid">
-
-          <!-- CARD: Shared National Aspirations -->
-          <div class="dash-card col-12">
-            <div class="card-banner-header">Shared National Aspirations</div>
-            <div class="card-body">
-              <div class="sub-section-title">Course Completion for National Priorities</div>
-              <div class="aspirations-list">
-                <div class="asp-item">
-                  <div class="asp-header"><span class="asp-title">AI & Emerging Tech</span><span
-                      class="asp-count">3,38,80,712</span></div>
-                  <div class="progress-track">
-                    <div class="progress-fill" style="width: 88%;"></div>
-                  </div>
-                </div>
-                <div class="asp-item">
-                  <div class="asp-header"><span class="asp-title">Citizen Centricity & Jan Bhagidari</span><span
-                      class="asp-count">1,50,86,052</span></div>
-                  <div class="progress-track">
-                    <div class="progress-fill" style="width: 65%;"></div>
-                  </div>
-                </div>
-                <div class="asp-item">
-                  <div class="asp-header"><span class="asp-title">Viksit Bharat 2047 Data Analytics</span><span
-                      class="asp-count">1,10,49,297</span></div>
-                  <div class="progress-track">
-                    <div class="progress-fill" style="width: 52%;"></div>
-                  </div>
-                </div>
-                <div class="asp-item">
-                  <div class="asp-header"><span class="asp-title">Official Statistical Systems Modernization</span><span
-                      class="asp-count">89,45,210</span></div>
-                  <div class="progress-track">
-                    <div class="progress-fill" style="width: 44%;"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- CARD 5: Right Person for the Right Job (eHRMS) -->
-          <div class="dash-card col-12">
-            <div class="card-banner-header">Right Person for the Right Job (eHRMS)</div>
-            <div class="card-body">
-              <div class="ehrms-grid">
-                <div class="ehrms-card">
-                  <i class="fas fa-id-card-clip fa-2x" style="color:#1A73E8; margin-bottom:8px;"></i>
-                  <div>Employees with eHRMS Access</div>
-                </div>
-                <div class="ehrms-card">
-                  <div class="stat-icon-wrapper" style="margin: 0 auto 8px auto;"><i
-                      class="fas fa-hand-holding-hand"></i>
-                  </div>
-                  <div>Employees Services Available</div>
-                </div>
-                <div class="ehrms-card">
-                  <i class="fas fa-arrows-split-up-and-left fa-2x" style="color:#FF9933; margin-bottom:8px;"></i>
-                  <div>Transfer and Deputation Postings</div>
-                </div>
-                <div class="ehrms-card">
-                  <i class="fas fa-file-signature fa-2x" style="color:#059669; margin-bottom:8px;"></i>
-                  <div>Pension Claims Processed</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
       <!-- SECTION 2: AI ASSESSMENT ENGINE (MCQ Generator) -->
       <div id="sec-ai-quiz" class="view-section" style="display: none;">
         <div class="quiz-engine-card">
@@ -489,39 +414,41 @@
             <div id="questionsContainer"></div>
           </div>
         </div>
-      </div>
-      <!-- Assessment & Quiz History Card -->
-      <div class="card"
-        style="background:#fff; border-radius:12px; padding:20px; margin-top:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-          <h4 style="margin:0; color:#003366; font-size:1.05rem;">
-            <i class="fas fa-history" style="color:#1A73E8; margin-right:8px;"></i> AI Assessment & Quiz History
-          </h4>
-          <button class="btn-login" onclick="loadQuizHistory()" style="font-size:0.75rem; padding:4px 10px;">
-            <i class="fas fa-sync-alt"></i> Refresh
-          </button>
-        </div>
 
-        <div id="quizHistoryList" style="overflow-x:auto;">
-          <table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">
-            <thead>
-              <tr style="border-bottom:2px solid #EDF2F7; color:#64748B;">
-                <th style="padding:8px;">Assessment / Topic</th>
-                <th style="padding:8px;">Score</th>
-                <th style="padding:8px;">Percentage</th>
-                <th style="padding:8px;">Completion Date</th>
-                <th style="padding:8px;">Status</th>
-              </tr>
-            </thead>
-            <tbody id="quizHistoryTableBody">
-              <tr>
-                <td colspan="5" style="text-align:center; padding:15px; color:#94A3B8;">No completed assessments yet.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Assessment & Quiz History Card -->
+        <div class="card"
+          style="background:#fff; border-radius:12px; padding:20px; margin-top:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h4 style="margin:0; color:#003366; font-size:1.05rem;">
+              <i class="fas fa-history" style="color:#1A73E8; margin-right:8px;"></i> AI Assessment & Quiz History
+            </h4>
+            <button class="btn-login" onclick="loadQuizHistory()" style="font-size:0.75rem; padding:4px 10px;">
+              <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+          </div>
+
+          <div id="quizHistoryList" style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">
+              <thead>
+                <tr style="border-bottom:2px solid #EDF2F7; color:#64748B;">
+                  <th style="padding:8px;">Assessment / Topic</th>
+                  <th style="padding:8px;">Score</th>
+                  <th style="padding:8px;">Percentage</th>
+                  <th style="padding:8px;">Completion Date</th>
+                  <th style="padding:8px;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="quizHistoryTableBody">
+                <tr>
+                  <td colspan="5" style="text-align:center; padding:15px; color:#94A3B8;">No completed assessments yet.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
+
 
       <!-- SECTION 3: LEARNER COMPETENCY DASHBOARD -->
       <div id="sec-learner" class="view-section" style="display: none;">
