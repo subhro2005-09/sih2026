@@ -174,6 +174,7 @@ function renderLoggedInState() {
 
   updateTimeframeStats();
   loadQuizHistory();
+  loadPredictiveNeeds();
 
   // Resize charts after container becomes visible
   setTimeout(() => {
@@ -323,6 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnToggleRegister')?.addEventListener('click', () => switchAuthMode('register'));
 
   checkAuthState();
+  loadPredictiveNeeds();
 });
 
 // RESUME UPLOADER & SKILL AI EXTRACTION ENGINE
@@ -431,31 +433,33 @@ async function processResumeFile(file) {
     if (progressFill) progressFill.style.width = '100%';
     if (progressPercent) progressPercent.textContent = '100%';
 
-    // Extract matched skills array
+    // Extract dynamic skills and gaps returned by backend
     const matchedSkills = gapData.top_matched_skills && gapData.top_matched_skills.length > 0
       ? gapData.top_matched_skills.map(s => typeof s === 'object' ? (s.name || s.competency || JSON.stringify(s)) : s)
       : [];
 
-    // STRICT MATCH SCORE CALCULATION
+    const identifiedGaps = gapData.identified_skill_gaps && gapData.identified_skill_gaps.length > 0
+      ? gapData.identified_skill_gaps.map(g => typeof g === 'object' ? (g.name || g.competency || JSON.stringify(g)) : g)
+      : [];
+
+    // Calculate dynamic match score
     const TOTAL_REQUIRED_COMPETENCIES = 13; 
     const matchedCount = matchedSkills.length;
     
-    let calculatedScore = 0;
-    if (matchedCount > 0) {
+    let calculatedScore = gapData.match_score !== undefined ? gapData.match_score : 0;
+    if (calculatedScore === 0 && matchedCount > 0) {
       calculatedScore = Math.min(100, Math.round((matchedCount / TOTAL_REQUIRED_COMPETENCIES) * 100));
     }
 
     const parsedData = {
       fileName: file.name,
       name: currentUser ? currentUser.name : file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").toUpperCase(),
-      title: matchedCount > 0 ? "Statistical Cadre Applicant • MoSPI" : "Unsuitable / Low Match Candidate",
+      title: calculatedScore >= 40 ? "Statistical Cadre Applicant • MoSPI" : "Unsuitable / Low Match Candidate",
       cadre: "MINISTRY OF STATISTICS & PROGRAMME IMPLEMENTATION",
       score: `${calculatedScore}%`,
       skills: matchedSkills.length > 0 ? matchedSkills : ["No Core MoSPI Competencies Evidenced"],
-      gaps: gapData.identified_skill_gaps && gapData.identified_skill_gaps.length > 0
-        ? gapData.identified_skill_gaps.map(g => typeof g === 'object' ? (g.name || g.competency || JSON.stringify(g)) : g)
-        : ["Core Cadre Prerequisites Missing"],
-      courses: [
+      gaps: identifiedGaps.length > 0 ? identifiedGaps : ["Core Cadre Prerequisites Missing"],
+      courses: gapData.recommended_courses || [
         { title: "Foundational Official Statistics & Data Standards", code: "IGOT-STAT-101", duration: "6.0 Hours" },
         { title: "National Data Governance & Privacy Framework", code: "IGOT-GOV-204", duration: "4.5 Hours" }
       ]
@@ -1069,57 +1073,41 @@ function initA11y() {
     });
   }
 }
+
+// 9. PREDICTIVE NEEDS AI FORECAST LOADER
 async function loadPredictiveNeeds() {
-    try {
-        const response = await fetch(`${API_BASE}/api/predictive-needs`);
+  try {
+    const response = await fetch(`${API_BASE}/api/predictive-needs`);
 
-        if (!response.ok) {
-            throw new Error("Failed to fetch predictive needs");
-        }
-
-        const needs = await response.json();
-
-        renderPredictiveNeeds(needs);
-
-    } catch (error) {
-        console.error("Predictive needs error:", error);
+    if (!response.ok) {
+      throw new Error("Failed to fetch predictive needs");
     }
+
+    const needs = await response.json();
+    renderPredictiveNeeds(needs);
+
+  } catch (error) {
+    console.error("Predictive needs error:", error);
+  }
 }
 
 function renderPredictiveNeeds(needs) {
-    const container = document.getElementById("predictiveNeedsContainer");
+  const container = document.getElementById("predictiveNeedsContainer");
 
-    if (!container) return;
+  if (!container || !Array.isArray(needs)) return;
 
-    container.innerHTML = needs.map(item => `
-        <div class="predictive-need-card">
-
-            <h3>${item.topic}</h3>
-
-            <div class="prediction-stats">
-                <span>
-                    Supply: <strong>${item.supply_percentage}%</strong>
-                </span>
-
-                <span>
-                    Demand: <strong>${item.demand_percentage}%</strong>
-                    by ${item.target_year}
-                </span>
-            </div>
-
-            <div class="risk-badge">
-                ${item.risk_level}
-            </div>
-
-            <div class="critical-gap">
-                <strong>Critical Gap</strong>
-            </div>
-
-        </div>
-    `).join("");
+  container.innerHTML = needs.map(item => `
+    <div class="level-row" style="border-left: 4px solid ${item.risk_level?.toLowerCase().includes('critical') ? '#EF4444' : '#F59E0B'}; background: #F8FAFC; padding: 12px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <strong style="color: #1E293B; font-size: 0.9rem;">${item.topic}</strong><br />
+        <small style="color: #64748B;">Supply: ${item.supply_percentage}% | Demand: ${item.demand_percentage}% by ${item.target_year}</small>
+      </div>
+      <span class="q-badge" style="background: ${item.risk_level?.toLowerCase().includes('critical') ? '#FEE2E2' : '#FEF3C7'}; color: ${item.risk_level?.toLowerCase().includes('critical') ? '#B91C1C' : '#B45309'}; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">
+        ${item.risk_level}
+      </span>
+    </div>
+  `).join("");
 }
-
-loadPredictiveNeeds();
 
 // Modal helpers
 function openLoginModal(initialMode = 'login') {
