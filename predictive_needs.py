@@ -2,9 +2,14 @@ import os
 from google import genai
 from pydantic import BaseModel
 
-# Ensure environment variable is safely accessed
+# Safe lookup for the API key
+api_key = (
+    os.environ.get("GEMINI_API_KEY1")
+)
 
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY1"))
+# Initialize the new Google GenAI Client
+client = genai.Client(api_key=api_key)
+
 
 class CapacityNeed(BaseModel):
     topic: str
@@ -14,7 +19,7 @@ class CapacityNeed(BaseModel):
     risk_level: str
 
 
-system_instruction = """
+SYSTEM_INSTRUCTION = """
 You are a predictive workforce intelligence AI.
 Identify emerging technologies and skills likely to become important from 2026-2030,
 especially for government, statistics, AI, data analytics, and digital governance.
@@ -23,12 +28,6 @@ Generate realistic estimated projections for supply and future demand.
 Do not invent sources or present predictions as certain.
 Return concise dashboard-ready results.
 """
-
-# FIX: Use a valid model name like 'gemini-1.5-flash'
- models_to_try = [
-            "gemini-3.5-flash",
-            "gemini-3.0-flash",
-        ]
 
 
 def generate_capacity_needs():
@@ -46,12 +45,35 @@ def generate_capacity_needs():
     risk_level.
     """
 
-    response = model.generate_content(
-        prompt,
-        generation_config=genai.GenerationConfig(
-            response_mime_type="application/json",
-            response_schema=list[CapacityNeed]
-        )
-    )
+    # Model fallback list using valid model names
+    models_to_try = [
+        "gemini-3.5-flash",
+        "gemini-3.0-flash",
+    ]
 
-    return response.text
+    response = None
+    last_error = None
+
+    for m in models_to_try:
+        try:
+            response = client.models.generate_content(
+                model=m,
+                contents=prompt,
+                config={
+                    "system_instruction": SYSTEM_INSTRUCTION,
+                    "response_mime_type": "application/json",
+                    "response_schema": list[CapacityNeed],
+                    "temperature": 0.2,
+                },
+            )
+            if response and response.parsed:
+                break
+        except Exception as e:
+            last_error = e
+            continue
+
+    if not response or not response.parsed:
+        raise RuntimeError(f"Failed to generate capacity needs: {last_error}")
+
+    # Returns list of dicts: [{'topic': '...', 'supply_percentage': ...}, ...]
+    return [item.model_dump() for item in response.parsed]
