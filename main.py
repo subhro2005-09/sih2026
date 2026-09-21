@@ -68,7 +68,7 @@ app.add_middleware(
 )
 
 # 4. Clients
-ai_client = genai.Client(api_key=os.environ.get("API_KEY", ""))
+ai_client = genai.Client(api_key=os.environ.get("API_KEY", "API_KEY2"))
 inngest_client = inngest.Inngest(
     app_id="resume_reviewer",
     logger=logging.getLogger("uvicorn"),
