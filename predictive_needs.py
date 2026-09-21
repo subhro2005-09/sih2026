@@ -1,5 +1,5 @@
 import os
-import google.generativeai as genai
+from google import genai
 from pydantic import BaseModel
 
 # Ensure environment variable is safely accessed
@@ -26,11 +26,10 @@ Return concise dashboard-ready results.
 """
 
 # FIX: Use a valid model name like 'gemini-1.5-flash'
-model = genai.GenerativeModel(
-    "gemini-3.0-flash",
-    "gemini-3.5-flash",
-    system_instruction=system_instruction
-)
+ models_to_try = [
+            "gemini-3.5-flash",
+            "gemini-3.0-flash",
+        ]
 
 
 def generate_capacity_needs():
