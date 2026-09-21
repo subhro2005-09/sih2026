@@ -11,12 +11,40 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Mapping, Sequence
-
+import logging
+from pathlib import Path
+importonnxruntime as ort
+from huggingface_hub import hf_hub_download
 import numpy as np
 import onnxruntime as ort
 from transformers import AutoTokenizer
 
-logger = logging.getLogger(__name__)
+
+logger = logging.getLogger("uvicorn")
+
+class MiniLMEncoder:
+    def __init__(self, model_dir: Path | str = "models/all-MiniLM-L6-v2"):
+        self.model_dir = Path(model_dir)
+        model_path = self.model_dir / "model.onnx"
+
+        # Download from Hugging Face if not found on the deployment server
+        if not model_path.exists():
+            logger.info(f"ONNX model missing at {model_path}. Downloading from Hugging Face...")
+            self.model_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Download ONNX binary
+            hf_hub_download(
+                repo_id="Xenova/all-MiniLM-L6-v2",
+                filename="onnx/model.onnx",
+                local_dir=self.model_dir
+            )
+            
+            # Move onnx/model.onnx to model_dir/model.onnx if placed in nested folder
+            nested_path = self.model_dir / "onnx" / "model.onnx"
+            if nested_path.exists():
+                nested_path.rename(model_path)
+
+        self.session = ort.InferenceSession(str(model_path))
 
 DEFAULT_MODEL_DIR = Path("models/all-MiniLM-L6-v2")
 EMBEDDING_DIMENSION = 384
@@ -207,6 +235,10 @@ class CompetencyEngine:
         return [{"competency": g.competency, "current_score": g.current_score, "required_score": g.required_score, "gap": g.gap, "priority": g.priority} for g in gaps]
 
 _engine: CompetencyEngine | None = None
+
+
+
+
 
 def get_competency_engine(model_dir: Path | str = DEFAULT_MODEL_DIR) -> CompetencyEngine:
     global _engine
