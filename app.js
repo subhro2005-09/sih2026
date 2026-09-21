@@ -301,7 +301,7 @@ function switchAuthMode(mode) {
     if (regToggle) regToggle.style.opacity = '0.5';
   } else {
     if (title) title.innerHTML = '<i class="fas fa-shield-halved"></i> iGOT Employee Registration';
-    if (submitBtn) submitBtn.textContent = 'Register & Save to PostgreSQL';
+    if (submitBtn) submitBtn.textContent = 'Register';
     if (regToggle) regToggle.style.opacity = '1';
     if (loginToggle) loginToggle.style.opacity = '0.5';
   }
