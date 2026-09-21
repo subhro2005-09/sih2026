@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-
+from predictive_needs import generate_capacity_needs
 from dotenv import load_dotenv
 
 # 1. Load environment variables FIRST before any DB or API client initializes
@@ -75,7 +75,7 @@ inngest_client = inngest.Inngest(
     is_production=False,
     serializer=inngest.PydanticSerializer()
 )
-
+   
 # 5. Inngest Ingestion Workflow
 @inngest_client.create_function(
     fn_id="Rag PDF",
@@ -397,3 +397,6 @@ def serve_js():
 @app.get("/data.js", include_in_schema=False)
 def serve_data():
     return FileResponse(str(BASE_DIR / "data.js"))
+@app.get("/api/predictive-needs")
+def predictive_needs():
+    return generate_capacity_needs()
