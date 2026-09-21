@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict, List, Mapping, Sequence
 import logging
 from pathlib import Path
-importonnxruntime as ort
+import onnxruntime as ort
 from huggingface_hub import hf_hub_download
 import numpy as np
 import onnxruntime as ort
