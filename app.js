@@ -1069,6 +1069,57 @@ function initA11y() {
     });
   }
 }
+async function loadPredictiveNeeds() {
+    try {
+        const response = await fetch(`${API_BASE}/api/predictive-needs`);
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch predictive needs");
+        }
+
+        const needs = await response.json();
+
+        renderPredictiveNeeds(needs);
+
+    } catch (error) {
+        console.error("Predictive needs error:", error);
+    }
+}
+
+function renderPredictiveNeeds(needs) {
+    const container = document.getElementById("predictiveNeedsContainer");
+
+    if (!container) return;
+
+    container.innerHTML = needs.map(item => `
+        <div class="predictive-need-card">
+
+            <h3>${item.topic}</h3>
+
+            <div class="prediction-stats">
+                <span>
+                    Supply: <strong>${item.supply_percentage}%</strong>
+                </span>
+
+                <span>
+                    Demand: <strong>${item.demand_percentage}%</strong>
+                    by ${item.target_year}
+                </span>
+            </div>
+
+            <div class="risk-badge">
+                ${item.risk_level}
+            </div>
+
+            <div class="critical-gap">
+                <strong>Critical Gap</strong>
+            </div>
+
+        </div>
+    `).join("");
+}
+
+loadPredictiveNeeds();
 
 // Modal helpers
 function openLoginModal(initialMode = 'login') {
