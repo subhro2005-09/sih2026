@@ -1,16 +1,23 @@
 """
+competency.py
 NLP-based competency assessment engine for MoSPI & Govt Statistical Cadres.
 Runs ONNX Runtime locally without PyTorch or Gemini API calls.
 """
 
 from __future__ import annotations
 
-import logging
 import os
-import re
 import tempfile
-from dataclasses import dataclass
 from pathlib import Path
+
+# IMPORTANT: Force Hugging Face cache to writable /tmp directory BEFORE HF imports
+SYSTEM_TEMP_DIR = Path(tempfile.gettempdir())
+os.environ["HF_HOME"] = str(SYSTEM_TEMP_DIR / "hf_home")
+os.environ["TRANSFORMERS_CACHE"] = str(SYSTEM_TEMP_DIR / "transformers_cache")
+
+import logging
+import re
+from dataclasses import dataclass
 from typing import Dict, List, Mapping, Sequence
 
 import numpy as np
@@ -20,8 +27,6 @@ from transformers import AutoTokenizer
 
 logger = logging.getLogger("uvicorn")
 
-# Use /tmp directory for serverless environment compatibility (Vercel, AWS Lambda)
-SYSTEM_TEMP_DIR = Path(tempfile.gettempdir())
 DEFAULT_MODEL_DIR = SYSTEM_TEMP_DIR / "models" / "all-MiniLM-L6-v2"
 
 EMBEDDING_DIMENSION = 384
@@ -101,14 +106,14 @@ class MiniLMEncoder:
         self.model_dir = Path(model_dir)
         model_path = self.model_dir / "model.onnx"
 
-        # Check local relative dir first, then fall back to writable /tmp path
+        # Check local relative directory first, then fall back to writable /tmp path
         if not model_path.exists():
             local_fallback = Path("models/all-MiniLM-L6-v2/model.onnx")
             if local_fallback.exists():
                 model_path = local_fallback
                 self.model_dir = local_fallback.parent
 
-        # Download from Hugging Face to writable /tmp if missing
+        # Download ONNX model from Hugging Face to writable /tmp if missing
         if not model_path.exists():
             logger.info(f"ONNX model missing at {model_path}. Downloading from Hugging Face to writable temp dir...")
             self.model_dir.mkdir(parents=True, exist_ok=True)
@@ -124,16 +129,12 @@ class MiniLMEncoder:
             if nested_path.exists():
                 nested_path.rename(model_path)
 
-        # Download or load Tokenizer
+        # Load Tokenizer directly from Hugging Face Hub (cached into HF_HOME in /tmp)
         try:
-            self.tokenizer = AutoTokenizer.from_pretrained(str(self.model_dir))
+            self.tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
         except Exception:
-            logger.info("Tokenizer files missing locally. Fetching tokenizer from Hugging Face...")
+            logger.info("Falling back to Xenova/all-MiniLM-L6-v2 tokenizer...")
             self.tokenizer = AutoTokenizer.from_pretrained("Xenova/all-MiniLM-L6-v2")
-            try:
-                self.tokenizer.save_pretrained(str(self.model_dir))
-            except Exception as e:
-                logger.warning(f"Could not cache tokenizer to disk: {e}")
 
         # Set CPU thread limits for serverless compatibility
         opts = ort.SessionOptions()
