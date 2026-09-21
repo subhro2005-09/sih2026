@@ -144,7 +144,7 @@ const IGOT_DATA = {
     competencies: {
       labels: ['Sample Survey Methods', 'Data Analytics & Python', 'Official Statistics Standards', 'Public Service Leadership', 'AI in Governance', 'Survey Quality Control'],
       current: [0, 0, 0, 0, 0, 0],
-      target: [0, 0, 0, 0, 0, 0]
+      target: [90, 85, 95, 89, 85, 95]
     },
     learningHours: 48.5,
     coursesCompleted: 12,
