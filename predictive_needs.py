@@ -32,7 +32,7 @@ Return concise dashboard-ready results.
 
 def generate_capacity_needs():
     prompt = """
-    Generate 4 predictive capacity-building needs for 2026-2030.
+    Generate 2 predictive capacity-building needs for 2026-2030.
 
     Focus on emerging technologies and skills where future workforce
     demand is expected to exceed current capability.
