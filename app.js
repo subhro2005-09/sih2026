@@ -93,7 +93,6 @@ function loginUser(userData) {
   const formattedTime = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ", " +
     now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + " IST";
 
-  // Format user details returned from PostgreSQL
   currentUser = {
     id: userData.id || null,
     email: userData.email,
@@ -125,7 +124,6 @@ function renderLoggedInState() {
   if (preLoginSec) preLoginSec.style.display = 'none';
   if (loggedInDash) loggedInDash.style.display = 'block';
 
-  // Activate "Upload Resume" tab by default upon login
   const tabs = document.querySelectorAll('.v-tab');
   const sections = document.querySelectorAll('.view-section');
   tabs.forEach(t => {
@@ -143,7 +141,6 @@ function renderLoggedInState() {
     }
   });
 
-  // Update Header Auth Buttons
   if (navAuthContainer && currentUser) {
     navAuthContainer.innerHTML = `
       <div class="user-pill" style="font-size:0.85rem; font-weight:600; color:#1A73E8; margin-right:10px;">
@@ -155,7 +152,6 @@ function renderLoggedInState() {
     `;
   }
 
-  // Update Learner Profile Card
   const lName = document.getElementById('l-name');
   const lDesig = document.getElementById('l-desig');
   const lDept = document.getElementById('l-dept');
@@ -163,7 +159,6 @@ function renderLoggedInState() {
   if (lDesig) lDesig.textContent = `Years of Service: ${currentUser.experience} Years`;
   if (lDept) lDept.textContent = currentUser.title;
 
-  // Update User Banner Stats
   const nameEl = document.getElementById('dash-user-name');
   const titleEl = document.getElementById('dash-user-title');
   const loginEl = document.getElementById('dash-last-login');
@@ -176,7 +171,6 @@ function renderLoggedInState() {
   loadQuizHistory();
   loadPredictiveNeeds();
 
-  // Resize charts after container becomes visible
   setTimeout(() => {
     if (competencyDonutChart) competencyDonutChart.resize();
     if (democratisedBarChart) democratisedBarChart.resize();
@@ -201,7 +195,6 @@ function renderLoggedOutState() {
   }
 }
 
-// Timeframe statistics calculation
 function updateTimeframeStats() {
   const select = document.getElementById('timeframeSelect');
   const countEl = document.getElementById('dash-courses-count');
@@ -224,7 +217,6 @@ function updateTimeframeStats() {
   }
 }
 
-// Authentication Form Listener (Handles Verification & Registration)
 document.getElementById('authForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('btnAuthSubmit');
@@ -234,7 +226,6 @@ document.getElementById('authForm')?.addEventListener('submit', async (e) => {
   const password = document.getElementById('authPassword').value;
 
   if (authMode === "login") {
-    // LOGIN FLOW: Verifies email & password with PostgreSQL
     try {
       const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
@@ -249,7 +240,6 @@ document.getElementById('authForm')?.addEventListener('submit', async (e) => {
         return;
       }
 
-      // Save token and login user
       localStorage.setItem('authToken', data.access_token);
       loginUser(data.user);
       alert(`Welcome, ${data.user.email}! Access granted.`);
@@ -261,7 +251,6 @@ document.getElementById('authForm')?.addEventListener('submit', async (e) => {
     }
 
   } else {
-    // REGISTRATION FLOW: Inserts new user into PostgreSQL
     const expVal = document.getElementById('authExp') ? (parseInt(document.getElementById('authExp').value, 10) || 5) : 5;
     try {
       const res = await fetch(`${API_BASE}/api/auth/register`, {
@@ -319,11 +308,22 @@ document.addEventListener('DOMContentLoaded', () => {
   initStatBot();
   initA11y();
 
-  // Modal toggle listeners
   document.getElementById('btnToggleLogin')?.addEventListener('click', () => switchAuthMode('login'));
   document.getElementById('btnToggleRegister')?.addEventListener('click', () => switchAuthMode('register'));
 
   checkAuthState();
+
+  // Load cached predictive needs instantly to prevent flicker on reload
+  const cachedNeeds = localStorage.getItem('karmayogi_predictive_needs');
+  if (cachedNeeds) {
+    try {
+      renderPredictiveNeeds(JSON.parse(cachedNeeds));
+    } catch (e) {
+      console.warn("Could not parse cached predictive needs:", e);
+    }
+  }
+
+  // Fetch updated data from API
   loadPredictiveNeeds();
 });
 
@@ -369,7 +369,6 @@ function initResumeUploader() {
     }
   });
 
-  // Action Listener for "Sync Skills to Profile"
   document.getElementById('btnSyncProfile')?.addEventListener('click', () => {
     const currentResume = JSON.parse(localStorage.getItem('karmayogi_resume') || '{}');
     if (currentResume.score) {
@@ -380,7 +379,6 @@ function initResumeUploader() {
     }
   });
 
-  // Load existing parsed resume if saved
   const storedResume = localStorage.getItem('karmayogi_resume');
   if (storedResume) {
     try {
@@ -434,21 +432,14 @@ async function processResumeFile(file) {
     if (progressPercent) progressPercent.textContent = '100%';
 
     // Extract dynamic skills and gaps returned by backend
-    const matchedSkills = gapData.top_matched_skills && gapData.top_matched_skills.length > 0
-      ? gapData.top_matched_skills.map(s => typeof s === 'object' ? (s.name || s.competency || JSON.stringify(s)) : s)
-      : [];
+    const matchedSkills = gapData.top_matched_skills || gapData.detected_skills || [];
+    const identifiedGaps = gapData.identified_skill_gaps || gapData.skill_gaps || [];
 
-    const identifiedGaps = gapData.identified_skill_gaps && gapData.identified_skill_gaps.length > 0
-      ? gapData.identified_skill_gaps.map(g => typeof g === 'object' ? (g.name || g.competency || JSON.stringify(g)) : g)
-      : [];
-
-    // Calculate dynamic match score
-    const TOTAL_REQUIRED_COMPETENCIES = 13; 
-    const matchedCount = matchedSkills.length;
-    
-    let calculatedScore = gapData.match_score !== undefined ? gapData.match_score : 0;
-    if (calculatedScore === 0 && matchedCount > 0) {
-      calculatedScore = Math.min(100, Math.round((matchedCount / TOTAL_REQUIRED_COMPETENCIES) * 100));
+    // Calculate dynamic score directly from response
+    let calculatedScore = gapData.match_score;
+    if (calculatedScore === undefined || calculatedScore === null) {
+      const totalCompetencies = (matchedSkills.length + identifiedGaps.length) || 1;
+      calculatedScore = Math.min(100, Math.round((matchedSkills.length / totalCompetencies) * 100));
     }
 
     const parsedData = {
@@ -521,14 +512,11 @@ function recordResumeHistory(fileName, data) {
   loadResumeHistory();
 }
 
-// Syncs the parsed resume match score and competencies with the Learner Radar Chart
 function syncResumeToRadarChart(scorePercentage) {
   if (!learnerRadarChart) return;
 
-  // Extract score percentage number ("75%" -> 75)
   const numericScore = parseInt(scorePercentage, 10) || 0;
 
-  // Calculate dynamic radar chart values based on the resume match
   const scaledCurrentScores = [
     Math.round(numericScore * 0.95), // Official Statistics
     Math.round(numericScore * 0.85), // Data Science & Python
@@ -538,10 +526,7 @@ function syncResumeToRadarChart(scorePercentage) {
     Math.round(numericScore * 0.50)  // Cyber Security
   ];
 
-  // Update Dataset 0 (Current Score)
   learnerRadarChart.data.datasets[0].data = scaledCurrentScores;
-  
-  // Re-render chart UI
   learnerRadarChart.update();
 }
 
@@ -564,13 +549,13 @@ function renderParsedResumeResults(data) {
 
   if (skillsContainer && data.skills) {
     skillsContainer.innerHTML = data.skills.map(s => `
-      <span class="skill-tag"><i class="fas fa-check-circle"></i> ${s}</span>
+      <span class="skill-tag"><i class="fas fa-check-circle"></i> ${typeof s === 'object' ? (s.name || s.competency || JSON.stringify(s)) : s}</span>
     `).join('');
   }
 
   if (gapsContainer && data.gaps) {
     gapsContainer.innerHTML = data.gaps.map(g => `
-      <span class="gap-tag"><i class="fas fa-exclamation-triangle"></i> ${g}</span>
+      <span class="gap-tag"><i class="fas fa-exclamation-triangle"></i> ${typeof g === 'object' ? (g.name || g.competency || JSON.stringify(g)) : g}</span>
     `).join('');
   }
 
@@ -588,7 +573,6 @@ function renderParsedResumeResults(data) {
 
   resultsArea.style.display = 'block';
 
-  // AUTOMATIC SYNC WITH RADAR CHART
   syncResumeToRadarChart(data.score);
 }
 
@@ -736,6 +720,11 @@ function initViewTabs() {
       const targetSec = document.getElementById(targetId);
       if (targetSec) {
         targetSec.style.display = 'block';
+
+        if (targetId === 'sec-admin') {
+          if (adminDeptChart) adminDeptChart.resize();
+          loadPredictiveNeeds();
+        }
       }
     });
   });
@@ -1000,7 +989,6 @@ function checkAnswer(qId, selectedIdx, correctIdx) {
     currentQuizScore.correct += 1;
   }
 
-  // Submit to PostgreSQL when all questions are answered
   if (currentQuizScore.answered === currentQuizScore.total) {
     submitQuizResult();
   }
@@ -1074,8 +1062,18 @@ function initA11y() {
   }
 }
 
-// 9. PREDICTIVE NEEDS AI FORECAST LOADER
+// 9. PREDICTIVE NEEDS AI FORECAST LOADER WITH CACHING
 async function loadPredictiveNeeds() {
+  const container = document.getElementById("predictiveNeedsContainer");
+
+  // Display initial loading state if container is currently empty
+  if (container && (!container.children || container.children.length === 0)) {
+    container.innerHTML = `
+      <div style="text-align: center; color: #64748B; padding: 20px;">
+        <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> Loading AI workforce forecast...
+      </div>`;
+  }
+
   try {
     const response = await fetch(`${API_BASE}/api/predictive-needs`);
 
@@ -1084,10 +1082,17 @@ async function loadPredictiveNeeds() {
     }
 
     const needs = await response.json();
+    
+    // Store in browser storage to handle network latency during page refreshes
+    localStorage.setItem('karmayogi_predictive_needs', JSON.stringify(needs));
     renderPredictiveNeeds(needs);
 
   } catch (error) {
     console.error("Predictive needs error:", error);
+    // Keep existing cached items rendered if fetch fails
+    if (container && (!container.children || container.children.length === 0)) {
+      container.innerHTML = `<div style="text-align:center; padding:15px; color:#94A3B8;">Could not load predictive AI service.</div>`;
+    }
   }
 }
 
