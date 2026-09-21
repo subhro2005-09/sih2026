@@ -367,8 +367,15 @@ function initResumeUploader() {
     }
   });
 
+  // Action Listener for "Sync Skills to Profile"
   document.getElementById('btnSyncProfile')?.addEventListener('click', () => {
-    alert("✅ Resume competencies successfully synced to your official iGOT Karmayogi Profile!");
+    const currentResume = JSON.parse(localStorage.getItem('karmayogi_resume') || '{}');
+    if (currentResume.score) {
+      syncResumeToRadarChart(currentResume.score);
+      alert(`✅ Synced resume score (${currentResume.score}) directly into your Target Competency Graph!`);
+    } else {
+      alert("Please upload a resume first to sync scores.");
+    }
   });
 
   // Load existing parsed resume if saved
@@ -510,6 +517,30 @@ function recordResumeHistory(fileName, data) {
   loadResumeHistory();
 }
 
+// Syncs the parsed resume match score and competencies with the Learner Radar Chart
+function syncResumeToRadarChart(scorePercentage) {
+  if (!learnerRadarChart) return;
+
+  // Extract score percentage number ("75%" -> 75)
+  const numericScore = parseInt(scorePercentage, 10) || 0;
+
+  // Calculate dynamic radar chart values based on the resume match
+  const scaledCurrentScores = [
+    Math.round(numericScore * 0.95), // Official Statistics
+    Math.round(numericScore * 0.85), // Data Science & Python
+    Math.round(numericScore * 0.70), // Sample Survey Design
+    Math.round(numericScore * 0.60), // AI & ML in Governance
+    Math.round(numericScore * 0.90), // Public Policy Analytics
+    Math.round(numericScore * 0.50)  // Cyber Security
+  ];
+
+  // Update Dataset 0 (Current Score)
+  learnerRadarChart.data.datasets[0].data = scaledCurrentScores;
+  
+  // Re-render chart UI
+  learnerRadarChart.update();
+}
+
 function renderParsedResumeResults(data) {
   const resultsArea = document.getElementById('resumeResultsArea');
   if (!resultsArea) return;
@@ -552,6 +583,9 @@ function renderParsedResumeResults(data) {
   }
 
   resultsArea.style.display = 'block';
+
+  // AUTOMATIC SYNC WITH RADAR CHART
+  syncResumeToRadarChart(data.score);
 }
 
 // 1. TICKER VALUES INITIALIZER
