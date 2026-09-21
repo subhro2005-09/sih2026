@@ -143,8 +143,8 @@ const IGOT_DATA = {
     employeeId: "GOI-ISS-2024-8842",
     competencies: {
       labels: ['Sample Survey Methods', 'Data Analytics & Python', 'Official Statistics Standards', 'Public Service Leadership', 'AI in Governance', 'Survey Quality Control'],
-      current: [85, 62, 90, 75, 45, 80],
-      target: [95, 85, 95, 90, 80, 90]
+      current: [0, 0, 0, 0, 0, 0],
+      target: [0, 0, 0, 0, 0, 0]
     },
     learningHours: 48.5,
     coursesCompleted: 12,
