@@ -2,7 +2,9 @@ import os
 import google.generativeai as genai
 from pydantic import BaseModel
 
-genai.configure(api_key=os.environ["GEMINI_API_KEY1"])
+# Ensure environment variable is safely accessed
+api_key = os.environ.get("GEMINI_API_KEY1")
+genai.configure(api_key=api_key)
 
 
 class CapacityNeed(BaseModel):
@@ -23,16 +25,15 @@ Do not invent sources or present predictions as certain.
 Return concise dashboard-ready results.
 """
 
-
+# FIX: Use a valid model name like 'gemini-1.5-flash'
 model = genai.GenerativeModel(
-    "gemini-3.8-flash",
+    "gemini-3.0-flash",
+    "gemini-3.5-flash",
     system_instruction=system_instruction
 )
 
 
-
 def generate_capacity_needs():
-
     prompt = """
     Generate 4 predictive capacity-building needs for 2026-2030.
 
