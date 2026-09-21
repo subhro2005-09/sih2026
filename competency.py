@@ -31,19 +31,56 @@ DEFAULT_MODEL_DIR = SYSTEM_TEMP_DIR / "models" / "all-MiniLM-L6-v2"
 
 EMBEDDING_DIMENSION = 384
 MAX_SEQUENCE_LENGTH = 256
-DEFAULT_MATCH_THRESHOLD = 0.40
+DEFAULT_MATCH_THRESHOLD = 0.35
 
+# Calibrated Thresholds for Sentence-Transformer MiniLM-L6 Cosine Similarities
 DEFAULT_SCORE_THRESHOLDS = {
-    5: 0.80,
-    4: 0.70,
-    3: 0.60,
-    2: 0.50,
-    1: 0.40,
+    5: 0.65,
+    4: 0.55,
+    3: 0.45,
+    2: 0.38,
+    1: 0.30,
 }
 
-# Master MoSPI Competency Matrix (33 Competencies across 4 Pillars)
+# Key Term Aliases for Direct Matching Boosts
+COMPETENCY_KEYWORDS: Dict[str, List[str]] = {
+    "Survey Design": ["survey", "questionnaire", "sampling frame", "field survey", "data collection"],
+    "Sampling": ["sampling", "sample selection", "strata", "stratified", "sample size"],
+    "National Accounts": ["gdp", "national accounts", "gross domestic product", "gva", "economic aggregates"],
+    "Price Statistics": ["cpi", "wpi", "inflation", "price index", "consumer price", "wholesale price"],
+    "Labour Statistics": ["labour", "labor", "unemployment", "employment", "plfs", "workforce"],
+    "Agricultural Statistics": ["agricultural", "crop", "harvest", "yield", "land use"],
+    "Industrial Statistics": ["industrial", "iip", "manufacturing", "asi", "annual survey of industries"],
+    "SDG Indicators": ["sdg", "sustainable development", "agenda 2030", "indicators"],
+    "Metadata Standards": ["metadata", "sdmx", "data documentation", "data dictionary"],
+    "Data Quality Frameworks": ["data quality", "quality assurance", "data validation", "data audit"],
+    "Python": ["python", "pandas", "numpy", "scikit", "pyspark", "jupyter"],
+    "R": [" r ", "rstudio", "tidyverse", "ggplot", "cran"],
+    "SQL": ["sql", "postgresql", "mysql", "queries", "database", "sqlite"],
+    "Stata": ["stata", ".dta"],
+    "SPSS": ["spss", ".sav"],
+    "SAS": ["sas"],
+    "GIS": ["gis", "arcgis", "qgis", "spatial", "geospatial", "remote sensing"],
+    "Data Visualization": ["power bi", "tableau", "visualization", "dashboard", "matplotlib", "seaborn"],
+    "AI/ML": ["machine learning", "artificial intelligence", "deep learning", "neural", "predictive model", "classification"],
+    "Cloud Computing": ["aws", "azure", "gcp", "cloud", "docker", "kubernetes"],
+    "APIs": ["api", "rest api", "json", "fastapi", "endpoints"],
+    "Open Data": ["open data", "data portal", "public dataset"],
+    "Cybersecurity": ["cybersecurity", "security", "encryption", "firewall", "infosec"],
+    "Data Privacy": ["data privacy", "dpdp", "gdpr", "privacy policy", "anonymization"],
+    "Digital Signatures": ["digital signature", "pki", "esign", "dsc"],
+    "Government Cloud": ["meghraj", "gov cloud", "nic cloud"],
+    "Digital Public Infrastructure": ["dpi", "digital public infrastructure", "aadhaar", "upi", "digilocker"],
+    "Leadership": ["leadership", "led team", "head of", "director", "managed team"],
+    "Communication": ["communication", "presentation", "report writing", "stakeholder"],
+    "Project Management": ["project management", "pmp", "agile", "scrum", "project lead"],
+    "Ethics": ["ethics", "integrity", "code of conduct"],
+    "Decision Making": ["decision making", "analytical reasoning", "problem solving"],
+    "Change Management": ["change management", "transformation", "adoption"]
+}
+
+# Master MoSPI Competency Matrix
 COMPETENCIES: Mapping[str, str] = {
-    # Statistical
     "Survey Design": "Design and methodology of statistical surveys, questionnaire design, survey planning and implementation.",
     "Sampling": "Statistical sampling methods, sampling design, sample selection and estimation.",
     "National Accounts": "National accounts, GDP estimation, economic aggregates and national economic accounting.",
@@ -54,8 +91,6 @@ COMPETENCIES: Mapping[str, str] = {
     "SDG Indicators": "Sustainable Development Goal indicators, SDG measurement, monitoring and statistical reporting.",
     "Metadata Standards": "Statistical metadata, metadata standards, dataset documentation and statistical data description.",
     "Data Quality Frameworks": "Statistical data quality, validation, accuracy, consistency, completeness and quality assurance frameworks.",
-
-    # Technical
     "Python": "Python programming, Python scripting, data analysis and Python-based data processing.",
     "R": "R programming, statistical computing and data analysis using R.",
     "SQL": "SQL programming, relational databases, database querying and structured data management.",
@@ -68,15 +103,11 @@ COMPETENCIES: Mapping[str, str] = {
     "Cloud Computing": "Cloud computing, cloud infrastructure, cloud platforms and cloud-based applications.",
     "APIs": "Application Programming Interfaces, REST APIs, system integration and data exchange.",
     "Open Data": "Open government data, open datasets, data publishing and open data platforms.",
-
-    # Digital Governance
     "Cybersecurity": "Cybersecurity, information security, secure systems, security controls and protection of digital systems.",
     "Data Privacy": "Data privacy, DPDP Act, protection of personal information, privacy controls and responsible data handling.",
     "Digital Signatures": "Digital signatures, electronic authentication and digitally signed documents.",
     "Government Cloud": "Government cloud infrastructure, MeghRaj, government cloud platforms and secure public-sector cloud services.",
     "Digital Public Infrastructure": "Digital Public Infrastructure, DPI, interoperable public digital platforms and digital government systems.",
-
-    # Behavioural / Managerial
     "Leadership": "Leadership, team management, strategic leadership and leading organizational initiatives.",
     "Communication": "Professional communication, written communication, presentations and stakeholder communication.",
     "Project Management": "Project planning, execution, monitoring, resource management and project coordination.",
@@ -106,37 +137,29 @@ class MiniLMEncoder:
         self.model_dir = Path(model_dir)
         model_path = self.model_dir / "model.onnx"
 
-        # Check local relative directory first, then fall back to writable /tmp path
         if not model_path.exists():
             local_fallback = Path("models/all-MiniLM-L6-v2/model.onnx")
             if local_fallback.exists():
                 model_path = local_fallback
                 self.model_dir = local_fallback.parent
 
-        # Download ONNX model from Hugging Face to writable /tmp if missing
         if not model_path.exists():
-            logger.info(f"ONNX model missing at {model_path}. Downloading from Hugging Face to writable temp dir...")
+            logger.info(f"ONNX model missing at {model_path}. Downloading from Hugging Face...")
             self.model_dir.mkdir(parents=True, exist_ok=True)
-            
             hf_hub_download(
                 repo_id="Xenova/all-MiniLM-L6-v2",
                 filename="onnx/model.onnx",
                 local_dir=self.model_dir
             )
-            
-            # Re-locate file if placed inside a nested 'onnx' subfolder by hf_hub_download
             nested_path = self.model_dir / "onnx" / "model.onnx"
             if nested_path.exists():
                 nested_path.rename(model_path)
 
-        # Load Tokenizer directly from Hugging Face Hub (cached into HF_HOME in /tmp)
         try:
             self.tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
         except Exception:
-            logger.info("Falling back to Xenova/all-MiniLM-L6-v2 tokenizer...")
             self.tokenizer = AutoTokenizer.from_pretrained("Xenova/all-MiniLM-L6-v2")
 
-        # Set CPU thread limits for serverless compatibility
         opts = ort.SessionOptions()
         opts.intra_op_num_threads = 1
         opts.inter_op_num_threads = 1
@@ -179,7 +202,7 @@ class CompetencyEngine:
         self._competency_embeddings = self.encoder.encode(list(self.competencies.values()))
 
     @staticmethod
-    def extract_evidence(resume_text: str, max_evidence: int = 100) -> List[str]:
+    def extract_evidence(resume_text: str, max_evidence: int = 120) -> List[str]:
         if not resume_text:
             return []
         lines = re.split(r"[\n\r]+", resume_text.replace("\x00", " "))
@@ -187,7 +210,7 @@ class CompetencyEngine:
         for line in lines:
             cleaned = re.sub(r"^[\s•●▪▸\-–—]+", "", line)
             cleaned = re.sub(r"\s+", " ", cleaned).strip()
-            if len(cleaned) >= 15:
+            if len(cleaned) >= 10:
                 evidence.append(cleaned)
             if len(evidence) >= max_evidence:
                 break
@@ -198,6 +221,8 @@ class CompetencyEngine:
         if not evidence:
             raise ValueError("No valid text lines found in resume.")
 
+        full_resume_lower = f" {resume_text.lower()} "
+
         evidence_embeddings = self.encoder.encode(evidence)
         similarity_matrix = evidence_embeddings @ self._competency_embeddings.T
 
@@ -207,7 +232,17 @@ class CompetencyEngine:
             top_indices = np.argsort(scores)[-3:][::-1]
             best_sim = float(scores[top_indices[0]])
 
-            # Calculate 1-5 score
+            # Apply Keyword Boost if explicit terms are detected in text
+            kw_match = False
+            keywords = COMPETENCY_KEYWORDS.get(competency, [])
+            for kw in keywords:
+                if kw in full_resume_lower:
+                    kw_match = True
+                    break
+
+            if kw_match:
+                best_sim = max(best_sim, 0.52)
+
             score = 0.0
             for s, thresh in sorted(DEFAULT_SCORE_THRESHOLDS.items(), reverse=True):
                 if best_sim >= thresh:
@@ -253,4 +288,21 @@ def analyze_resume_gaps(resume_text: str, required_competencies: Mapping[str, fl
     engine = get_competency_engine()
     assessment = engine.analyze(resume_text)
     gaps = engine.calculate_gaps(assessment, required_competencies)
-    return {"assessment": assessment, "skill_gaps": gaps}
+
+    # Dynamic Top Skill Extraction & Score Calculation
+    detected_skills = [c["competency"] for c in assessment["competencies"] if c["score"] >= 2.0]
+    skill_gaps = [g["competency"] for g in gaps if g["gap"] > 0]
+
+    # Calculate global dynamic match score
+    total_reqs = len(required_competencies) if required_competencies else len(COMPETENCIES)
+    matched_count = len(detected_skills)
+    overall_match_score = min(100, round((matched_count / total_reqs) * 100))
+
+    return {
+        "assessment": assessment,
+        "detected_skills": detected_skills,
+        "skill_gaps": skill_gaps,
+        "match_score": overall_match_score,
+        "top_matched_skills": detected_skills[:6],
+        "identified_skill_gaps": skill_gaps[:6]
+    }
