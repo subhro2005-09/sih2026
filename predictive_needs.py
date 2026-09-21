@@ -3,9 +3,8 @@ from google import genai
 from pydantic import BaseModel
 
 # Ensure environment variable is safely accessed
-api_key = os.environ.get("GEMINI_API_KEY1")
-genai.configure(api_key=api_key)
 
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY1"))
 
 class CapacityNeed(BaseModel):
     topic: str
