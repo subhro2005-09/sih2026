@@ -71,7 +71,14 @@ app.add_middleware(
 )
 
 # 4. Clients
-ai_client = genai.Client(api_key=os.environ.get("API_KEY", "API_KEY2","API_KEY3"))
+# ✅ CORRECT: Checks API_KEY, then API_KEY2, then API_KEY3
+api_key = (
+    os.environ.get("API_KEY") 
+    or os.environ.get("API_KEY2") 
+    or os.environ.get("API_KEY3")
+)
+ai_client = genai.Client(api_key=api_key)
+
 inngest_client = inngest.Inngest(
     app_id="resume_reviewer",
     logger=logging.getLogger("uvicorn"),
