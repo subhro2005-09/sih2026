@@ -47,7 +47,7 @@ def generate_capacity_needs():
 
     # Model fallback list using valid model names
     models_to_try = [
-        "gemini-3.8-flash",
+        "gemini-3.6-flash",
         "gemini-3.5-flash",
     ]
 
