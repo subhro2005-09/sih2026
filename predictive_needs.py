@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 # Safe lookup for the API key
 api_key = (
-    os.environ.get("GEMINI_API_KEY1","GEMINI_API_KEY2")
+    os.environ.get("GEMINI_API_KEY3","GEMINI_API_KEY2")
 )
 
 # Initialize the new Google GenAI Client
@@ -47,8 +47,9 @@ def generate_capacity_needs():
 
     # Model fallback list using valid model names
     models_to_try = [
-        "gemini-3.6-flash",
+        "gemini-3.0-flash",
         "gemini-3.5-flash",
+        "gemini-3.6-flash",
     ]
 
     response = None
