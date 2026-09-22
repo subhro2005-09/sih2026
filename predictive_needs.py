@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 # Safe lookup for the API key
 api_key = (
-    os.environ.get("GEMINI_API_KEY1")
+    os.environ.get("GEMINI_API_KEY1","GEMINI_API_KEY2")
 )
 
 # Initialize the new Google GenAI Client
