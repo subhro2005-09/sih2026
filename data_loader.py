@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize Gemini Client
-client = genai.Client(api_key=os.environ.get("API_KEY", "API_KEY4"))
+client = genai.Client(api_key=os.environ.get("API_KEY4"))
 EMBED_MODEL = "gemini-embedding-001"
 
 
